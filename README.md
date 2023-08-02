@@ -51,7 +51,7 @@ try (IChatClient client = ChatClient.connect(Site.STACKOVERFLOW, email, password
 }
 ```
 
-[More sample code](https://github.com/mangstadt/sochat4j/tree/master/src/main/java/com/github/mangstadt/sochat4j/sample) 
+[More sample code](https://github.com/mangstadt/sochat4j/tree/master/src/test/java/com/github/mangstadt/sochat4j/sample) 
 
 # Build Instructions
 

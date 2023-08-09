@@ -52,8 +52,8 @@ public class UserInfo {
 
 	/**
 	 * Gets the URL to the profile picture. For users without a profile picture,
-	 * this will return a URL to the auto-generated picture (based on a hash of
-	 * the user's email address).
+	 * this will return a URL to the picture that was auto-generated based on a
+	 * hash of the user's email address.
 	 * @return the URL to the profile picture
 	 */
 	public String getProfilePicture() {
@@ -61,7 +61,7 @@ public class UserInfo {
 	}
 
 	/**
-	 * Gets the Stackoverflow reputation score.
+	 * Gets the user's reputation score.
 	 * @return the reputation
 	 */
 	public int getReputation() {

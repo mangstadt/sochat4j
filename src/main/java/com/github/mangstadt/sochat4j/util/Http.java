@@ -275,6 +275,7 @@ public class Http implements Closeable {
 
 		/**
 		 * Parses the response body as JSON and maps the data to a Java class.
+		 * @param <T> the Java class to map the data to
 		 * @param clazz the class
 		 * @return the parsed JSON or null if there is no response body (e.g.
 		 * HEAD requests)

@@ -179,14 +179,12 @@ public enum SplitStrategy {
 			return inMarkdown;
 		}
 
-		/*
-		 * Note: I don't escape () or _ in DescriptionNodeVisitor, so I'm not
-		 * going to treat these characters as escapable.
-		 */
-		private final String specialChars = "`*[]";
-
 		private boolean isSpecialChar(char c) {
-			return specialChars.indexOf(c) >= 0;
+			/*
+			 * I don't escape () or _ in DescriptionNodeVisitor, so I'm not
+			 * going to treat these characters as escapable.
+			 */
+			return "`*[]".indexOf(c) >= 0;
 		}
 	},
 

@@ -27,7 +27,7 @@ public interface IRoom extends Closeable {
 	String getFkey();
 
 	/**
-	 * Determines if the user can post messages to the room.
+	 * Determines if the user has permission to post messages to the room.
 	 * @return true if the user can post messages, false if not
 	 */
 	boolean canPost();
@@ -84,8 +84,8 @@ public interface IRoom extends Closeable {
 	 * Edits a message.
 	 * </p>
 	 * <p>
-	 * You can only edit your own messages. Also, messages older than two
-	 * minutes cannot be edited.
+	 * You can only edit your own messages. Messages older than two minutes
+	 * cannot be edited.
 	 * </p>
 	 * @param messageId the ID of the message to edit
 	 * @param content the updated message content
@@ -98,8 +98,8 @@ public interface IRoom extends Closeable {
 	 * Deletes a message.
 	 * </p>
 	 * <p>
-	 * You can only delete your own messages. Also, messages older than two
-	 * minutes cannot be deleted.
+	 * You can only delete your own messages. Messages older than two minutes
+	 * cannot be deleted.
 	 * </p>
 	 * @param messageId the ID of the message to delete
 	 * @throws IOException if there's a problem executing the request
@@ -115,10 +115,14 @@ public interface IRoom extends Closeable {
 	List<UserInfo> getUserInfo(List<Integer> userIds) throws IOException;
 
 	/**
-	 * Gets the users that are "pingable" for this room. Pingable users receive
-	 * notifications if they are mentioned. A user does not have to in the room
-	 * in order to be pingable; they must have joined the room sometime in the
-	 * recent past.
+	 * <p>
+	 * Gets the users that are "pingable" for this room.
+	 * </p>
+	 * <p>
+	 * Pingable users will receive a notification if they are mentioned. A user
+	 * does not have to in the room in order to be pingable--they remain
+	 * pingable for several days (or weeks?) after leaving the room.
+	 * </p>
 	 * @return the pingable users
 	 * @throws IOException if there's a problem executing the request
 	 */

@@ -3,11 +3,12 @@ package com.github.mangstadt.sochat4j;
 import java.time.LocalDateTime;
 
 /**
- * Represents a user that is "pingable". This means that they will receive a
- * notification if they are mentioned. It does not mean they are currently in
- * the room, although they could be.
+ * Represents a user that is "pingable". Pingable users receive a notification
+ * when they are mentioned. A user does not have to in the room in order to be
+ * pingable--they remain pingable for several days (or weeks?) after leaving the
+ * room.
  * @author Michael Angstadt
- * @see ChatConnection#getPingableUsers
+ * @see IRoom#getPingableUsers
  */
 public class PingableUser {
 	private final int roomId, userId;

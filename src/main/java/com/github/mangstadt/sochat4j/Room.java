@@ -23,7 +23,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -301,7 +300,6 @@ public class Room implements IRoom {
 	 * @param json the content of the message (formatted as a JSON object)
 	 */
 	private void handleWebSocketMessage(String json) {
-		//TODO include example message in comments
 		JsonNode node;
 		try {
 			node = mapper.readTree(json);
@@ -637,8 +635,12 @@ public class Room implements IRoom {
 			.setPath("/user/info")
 		.toString();
 
+		String idsCommaSeparated = userIds.stream()
+			.map(Object::toString)
+		.collect(Collectors.joining(","));
+
 		Response response = http.post(url,
-			"ids", StringUtils.join(userIds, ","),
+			"ids", idsCommaSeparated,
 			"roomId", roomId
 		);
 		//@formatter:on

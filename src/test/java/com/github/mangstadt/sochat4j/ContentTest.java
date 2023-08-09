@@ -57,27 +57,27 @@ public class ContentTest {
 		Content content;
 
 		content = Content.parse("one\ntwo");
-		assertFalse(content.isFixedFont());
+		assertFalse(content.isFixedWidthFont());
 		assertEquals("one\ntwo", content.getContent());
 		assertEquals("one\ntwo", content.getRawContent());
 
 		content = Content.parse("<pre class='full'>one\ntwo</pre>");
-		assertTrue(content.isFixedFont());
+		assertTrue(content.isFixedWidthFont());
 		assertEquals("one\ntwo", content.getContent());
 		assertEquals("<pre class='full'>one\ntwo</pre>", content.getRawContent());
 
 		content = Content.parse("<pre class='partial'>one\ntwo</pre>");
-		assertTrue(content.isFixedFont());
+		assertTrue(content.isFixedWidthFont());
 		assertEquals("one\ntwo", content.getContent());
 		assertEquals("<pre class='partial'>one\ntwo</pre>", content.getRawContent());
 
 		content = Content.parse("<div class='full'>one <br> two</div>");
-		assertFalse(content.isFixedFont());
+		assertFalse(content.isFixedWidthFont());
 		assertEquals("one\ntwo", content.getContent());
 		assertEquals("<div class='full'>one <br> two</div>", content.getRawContent());
 
 		content = Content.parse("<div class='partial'>one <br> two</div>");
-		assertFalse(content.isFixedFont());
+		assertFalse(content.isFixedWidthFont());
 		assertEquals("one\ntwo", content.getContent());
 		assertEquals("<div class='partial'>one <br> two</div>", content.getRawContent());
 	}

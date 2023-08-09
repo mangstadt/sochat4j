@@ -304,8 +304,6 @@ public class ChatMessage {
 		/**
 		 * Sets the content of the message.
 		 * @param content the content or null if the author deleted the message
-		 * @param fixedFont true if the content is formatted in a fixed font,
-		 * false if not
 		 * @return this
 		 */
 		public Builder content(String content) {
@@ -315,12 +313,12 @@ public class ChatMessage {
 		/**
 		 * Sets the content of the message.
 		 * @param content the content or null if the author deleted the message
-		 * @param fixedFont true if the content is formatted in a fixed font,
-		 * false if not
+		 * @param fixedWidthFont true if the content is formatted in a
+		 * fixed-width font, false if not
 		 * @return this
 		 */
-		public Builder content(String content, boolean fixedFont) {
-			return content((content == null) ? null : new Content(content, fixedFont));
+		public Builder content(String content, boolean fixedWidthFont) {
+			return content((content == null) ? null : new Content(content, fixedWidthFont));
 		}
 
 		/**

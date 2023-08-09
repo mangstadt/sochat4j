@@ -5,12 +5,12 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * A connection to a Stack Overflow chat site.
+ * A connection to a single chat site.
  * @author Michael Angstadt
- * @see <a href="https://chat.stackoverflow.com">chat.stackoverflow.com</a>
  * @see <a href=
- * "https://github.com/Zirak/SO-ChatBot/blob/master/source/adapter.js">Good
- * explanation of how SO Chat works</a>
+ * "https://meta.chat.stackoverflow.com">meta.chat.stackoverflow.com</a>
+ * @see <a href="https://chat.stackexchange.com">chat.stackexchange.com</a>
+ * @see <a href="https://chat.stackoverflow.com">chat.stackoverflow.com</a>
  */
 public interface IChatClient extends Closeable {
 	/**
@@ -48,14 +48,22 @@ public interface IChatClient extends Closeable {
 	 * @param roomId the room ID
 	 * @return the room or null if the chat client is not connected to that room
 	 */
-	IRoom getRoom(int roomId);
+	default IRoom getRoom(int roomId) {
+		//@formatter:off
+		return getRooms().stream()
+			.filter(room -> room.getRoomId() == roomId)
+		.findAny().orElse(null);
+		//@formatter:on
+	}
 
 	/**
 	 * Determines if the chat client is currently connected to a room.
 	 * @param roomId the room ID
 	 * @return true if the chat client is connected to the room, false if not
 	 */
-	boolean isInRoom(int roomId);
+	default boolean isInRoom(int roomId) {
+		return getRoom(roomId) != null;
+	}
 
 	/**
 	 * <p>
@@ -81,7 +89,7 @@ public interface IChatClient extends Closeable {
 
 	/**
 	 * Gets the account's username.
-	 * @return the username or null if it couldn't be found
+	 * @return the username or null if it couldn't be automatically retrieved.
 	 * @throws IllegalStateException if the user has not yet logged in
 	 * successfully using the {@link #login} method
 	 */
@@ -89,7 +97,7 @@ public interface IChatClient extends Closeable {
 
 	/**
 	 * Gets the account's user ID.
-	 * @return the user ID or null if couldn't be found
+	 * @return the user ID or null if couldn't be automatically retrieved.
 	 * @throws IllegalStateException if the user has not yet logged in
 	 * successfully using the {@link #login} method
 	 */

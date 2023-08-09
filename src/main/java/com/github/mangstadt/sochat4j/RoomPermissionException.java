@@ -4,7 +4,7 @@ package com.github.mangstadt.sochat4j;
  * <p>
  * Thrown when a request is sent to a room and it fails. It could fail for any
  * of the following reasons:
- * <p>
+ * </p>
  * <ul>
  * <li>The room is inactive/frozen.</li>
  * <li>The room is protected (the bot doesn't have permission to post).</li>

@@ -28,10 +28,8 @@ import com.github.mangstadt.sochat4j.util.Http;
 import jakarta.websocket.WebSocketContainer;
 
 /**
- * A connection to a Stack Exchange chat site that uses web sockets to retrieve
- * new messages. This class is thread-safe.
+ * A connection to a chat site. This class is thread-safe.
  * @author Michael Angstadt
- * @see <a href="https://chat.stackoverflow.com">chat.stackoverflow.com</a>
  * @see <a href=
  * "https://github.com/Zirak/SO-ChatBot/blob/master/source/adapter.js">Good
  * explanation of how SO Chat works</a>
@@ -81,9 +79,9 @@ public class ChatClient implements IChatClient {
 	}
 
 	/**
-	 * Creates a connection to a Stack Exchange chat site. Note that the
-	 * connection is not established until {@link #login} is called.
-	 * @param site the Stack Exchange site to connect to
+	 * Creates a connection to a chat site. The connection is not established
+	 * until {@link #login} is called.
+	 * @param site the site to connect to
 	 * @param httpClient the HTTP client
 	 * @param webSocketClient the web socket client
 	 */
@@ -110,7 +108,7 @@ public class ChatClient implements IChatClient {
 		Http.Response response = http.get(url);
 		String fkey = parseFKey(response.getBodyAsHtml());
 		if (fkey == null) {
-			throw new IOException("\"fkey\" field not found on Stack Exchange login page, cannot login.");
+			throw new IOException("Unable to login. \"fkey\" field not found on login page.");
 		}
 
 		//@formatter:off

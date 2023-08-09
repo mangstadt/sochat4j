@@ -26,7 +26,7 @@ public class MessageStarredEvent extends Event {
 	 * <li>{@link ChatMessage#getUserId() userId}</li>
 	 * <li>{@link ChatMessage#getUsername() userName}</li>
 	 * </ul>
-	 * @return
+	 * @return the chat message
 	 */
 	public ChatMessage getMessage() {
 		return message;

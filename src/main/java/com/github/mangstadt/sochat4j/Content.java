@@ -17,22 +17,29 @@ public class Content {
 	private static final Predicate<String> oneboxRegex = Pattern.compile("^<div class=\"([^\"]*?)onebox([^\"]*?)\"[^>]*?>").asPredicate();
 
 	private final String rawContent;
-	private final String content;
-	private final boolean fixedFont;
+	private final String sanitizedContent;
+	private final boolean fixedWidthFont;
 
-	private Content(String rawContent, String content, boolean fixedFont) {
+	/**
+	 * @param rawContent the message as it was received off the wire
+	 * @param sanitizedContent a sanitized version of the raw message content,
+	 * which should be used for most purposes (may contain HTML formatting)
+	 * @param fixedWidthFont true if the message content is in fixed-width font,
+	 * false if not
+	 */
+	private Content(String rawContent, String sanitizedContent, boolean fixedWidthFont) {
 		this.rawContent = rawContent;
-		this.content = content;
-		this.fixedFont = fixedFont;
+		this.sanitizedContent = sanitizedContent;
+		this.fixedWidthFont = fixedWidthFont;
 	}
 
 	/**
 	 * @param content the message content (may contain HTML formatting)
-	 * @param fixedFont true if the message content is in fixed font, false if
-	 * not
+	 * @param fixedWidthFont true if the message content is in fixed-width font,
+	 * false if not
 	 */
-	public Content(String content, boolean fixedFont) {
-		this(null, content, fixedFont);
+	public Content(String content, boolean fixedWidthFont) {
+		this(null, content, fixedWidthFont);
 	}
 
 	/**
@@ -41,24 +48,25 @@ public class Content {
 	 * @return the parsed content
 	 */
 	public static Content parse(String rawContent) {
-		String content = extractFixedFontContent(rawContent);
-		boolean fixedFont = (content != null);
-		if (!fixedFont) {
-			content = extractMultiLineContent(rawContent);
-			if (content == null) {
-				content = rawContent;
+		String sanitizedContent = extractFixedWidthFontContent(rawContent);
+		boolean fixedWidthFont = (sanitizedContent != null);
+		if (!fixedWidthFont) {
+			sanitizedContent = extractMultiLineContent(rawContent);
+			boolean multiLine = (sanitizedContent != null);
+			if (!multiLine) {
+				sanitizedContent = rawContent;
 			}
 		}
 
-		return new Content(rawContent, content, fixedFont);
+		return new Content(rawContent, sanitizedContent, fixedWidthFont);
 	}
 
 	/**
-	 * Gets the message content that was retrieved directly off the wire. This
+	 * Gets the message content as it was retrieved directly off the wire. This
 	 * method contrasts with the {@link #getContent} method, which contains a
-	 * tweaked version of the raw content to make it more usable (see the source
-	 * code of the {@link #parse} method for details on how the content is
-	 * tweaked).
+	 * sanitized version of the raw content to make it more usable (see the
+	 * source code of the {@link #parse} method for details on how the content
+	 * is sanitized).
 	 * @return the raw content or null if this object was not created from a
 	 * parsed message
 	 */
@@ -71,48 +79,46 @@ public class Content {
 	 * @return true if the message content is a onebox, false if not
 	 */
 	public boolean isOnebox() {
-		return oneboxRegex.test(content);
+		return oneboxRegex.test(sanitizedContent);
 	}
 
 	/**
 	 * Determines whether the message content is formatted in a monospace font.
 	 * @return true if it's formatted in a monospace font, false if not
 	 */
-	public boolean isFixedFont() {
-		return fixedFont;
+	public boolean isFixedWidthFont() {
+		return fixedWidthFont;
 	}
 
 	/**
 	 * <p>
-	 * Gets the message content. If you need the raw content as it was parsed
+	 * Gets the message content, lightly-sanitized for usability. May contain
+	 * basic HTML formatting. If you need the raw content as it was retrieved
 	 * off the wire, use {@link #getRawContent}.
 	 * </p>
 	 * <p>
 	 * Messages that consist of a single line of content may contain basic HTML
-	 * formatting (even though Stack Overflow Chat only accepts messages
-	 * formatted in Markdown syntax, when chat messages are retrieved from the
-	 * API, they are formatted in HTML).
+	 * formatting if the message author included any Markdown in the message.
 	 * </p>
 	 * <p>
 	 * Messages that contain multiple lines of text will not contain any
-	 * formatting because Stack Overflow Chat does not allow multi-lined
-	 * messages to contain formatting.
+	 * formatting because the chat system does not allow multi-lined messages to
+	 * contain formatting.
 	 * </p>
 	 * <p>
-	 * Messages that are formatted using a fixed font will not contain any
-	 * formatting either. Fixed font messages may contain multiple lines of
-	 * text. If a message is formatted in fixed font, the {@link #isFixedFont}
-	 * method will return true.
+	 * Messages that are formatted using a fixed-width font will not contain any
+	 * formatting either. Fixed-width font messages may contain a single line
+	 * of text or multiple lines of text. If a message is formatted in
+	 * fixed-width font, the {@link #isFixedWidthFont} method will return true.
 	 * </p>
 	 * <p>
-	 * Note that messages that contain a onebox will contain significant HTML
-	 * code. Use the {@link #isOnebox} method to determine if the message is a
-	 * onebox.
+	 * Note that onebox messages will contain significant HTML code. Use the
+	 * {@link #isOnebox} method to determine if the message is a onebox.
 	 * </p>
 	 * @return the message content
 	 */
 	public String getContent() {
-		return content;
+		return sanitizedContent;
 	}
 
 	/**
@@ -128,6 +134,7 @@ public class Content {
 	 * <pre>
 	 * Good morning, {@literal @}Frank and {@literal @}Bob!
 	 * </pre>
+	 * 
 	 * <p>
 	 * Mentions cannot contain spaces, so if a username contains spaces, those
 	 * spaces are removed from the mention.
@@ -139,8 +146,8 @@ public class Content {
 	 * </p>
 	 * <p>
 	 * Because mentions can contain only part of a person's username, and
-	 * because usernames are not unique on Stack Overflow, it's possible for a
-	 * mention to refer to more than one user.
+	 * because usernames are not unique on the platform, it's possible for a
+	 * single mention to refer to multiple users.
 	 * </p>
 	 * <p>
 	 * Mentions must be at least 3 characters long (not including the "at"
@@ -155,8 +162,8 @@ public class Content {
 
 		boolean inMention = false;
 		StringBuilder buffer = new StringBuilder();
-		for (int i = 0; i < content.length(); i++) {
-			char c = content.charAt(i);
+		for (int i = 0; i < sanitizedContent.length(); i++) {
+			char c = sanitizedContent.charAt(i);
 
 			if (inMention) {
 				if (Character.isLetter(c) || Character.isDigit(c)) {
@@ -198,23 +205,22 @@ public class Content {
 		}
 
 		username = username.toLowerCase().replace(" ", "");
-		for (String mention : mentions) {
-			mention = mention.toLowerCase();
-			if (username.startsWith(mention)) {
-				return true;
-			}
-		}
-		return false;
+
+		//@formatter:off
+		return mentions.stream()
+			.map(String::toLowerCase)
+		.anyMatch(username::startsWith);
+		//@formatter:on
 	}
 
 	@Override
 	public String toString() {
-		return "[fixedFont=" + fixedFont + "] " + content;
+		return "[fixedWidthFont=" + fixedWidthFont + "] " + sanitizedContent;
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(content, fixedFont, rawContent);
+		return Objects.hash(sanitizedContent, fixedWidthFont, rawContent);
 	}
 
 	@Override
@@ -223,31 +229,42 @@ public class Content {
 		if (obj == null) return false;
 		if (getClass() != obj.getClass()) return false;
 		Content other = (Content) obj;
-		return Objects.equals(content, other.content) && fixedFont == other.fixedFont && Objects.equals(rawContent, other.rawContent);
+		return Objects.equals(sanitizedContent, other.sanitizedContent) && fixedWidthFont == other.fixedWidthFont && Objects.equals(rawContent, other.rawContent);
 	}
 
 	/**
-	 * Extracts the message content from a message that is formatted in fixed
-	 * font. Fixed font messages are enclosed in a &lt;pre&gt; tag.
-	 * @param content the complete chat message content
-	 * @return the extracted message content or null if the message is not
-	 * fixed-font
+	 * <p>
+	 * Determines if a message is formatted in fixed-width font, and if so,
+	 * sanitizes it.
+	 * </p>
+	 * <p>
+	 * Fixed font messages are enclosed in a &lt;pre&gt; tag.
+	 * </p>
+	 * @param rawContent the raw message content as it was retrieved off the
+	 * wire
+	 * @return the sanitized message content or null if the message does not use
+	 * fixed-width font
 	 */
-	private static String extractFixedFontContent(String content) {
-		Matcher m = fixedWidthRegex.matcher(content);
+	private static String extractFixedWidthFontContent(String rawContent) {
+		Matcher m = fixedWidthRegex.matcher(rawContent);
 		return m.find() ? m.group(2) : null;
 	}
 
 	/**
-	 * Extracts the message content from a multi-line message. Multi-line
-	 * messages are enclosed in a &lt;div&gt; tag. Also converts &lt;br&gt; tags
-	 * to newlines.
-	 * @param content the complete chat message content
-	 * @return the extracted message content or null if the message is not
+	 * <p>
+	 * Determines if a message is a multi-line message, and if so, sanitizes it.
+	 * </p>
+	 * <p>
+	 * Multi-line messages are enclosed in a &lt;div&gt; tag and use &lt;br&gt;
+	 * tags for newlines.
+	 * </p>
+	 * @param rawContent the raw message content as it was retrieved off the
+	 * wire
+	 * @return the sanitized message content or null if the message is not
 	 * multi-line
 	 */
-	private static String extractMultiLineContent(String content) {
-		Matcher m = multiLineRegex.matcher(content);
+	private static String extractMultiLineContent(String rawContent) {
+		Matcher m = multiLineRegex.matcher(rawContent);
 		if (!m.find()) {
 			return null;
 		}

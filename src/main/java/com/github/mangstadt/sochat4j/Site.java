@@ -3,7 +3,7 @@ package com.github.mangstadt.sochat4j;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Represents a Stack Exchange site.
+ * Represents a chat site.
  * @author Michael Angstadt
  */
 public enum Site {

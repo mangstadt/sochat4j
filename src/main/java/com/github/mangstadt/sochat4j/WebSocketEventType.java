@@ -1,5 +1,7 @@
 package com.github.mangstadt.sochat4j;
 
+import java.util.Arrays;
+
 /**
  * Defines each web socket event type that this library knows how to handle.
  * @author Michael Angstadt
@@ -37,11 +39,10 @@ enum WebSocketEventType {
 	 * @return the event type or null if not found
 	 */
 	public static WebSocketEventType get(int id) {
-		for (WebSocketEventType eventType : values()) {
-			if (eventType.id == id) {
-				return eventType;
-			}
-		}
-		return null;
+		//@formatter:off
+		return Arrays.stream(values())
+			.filter(eventType -> eventType.id == id)
+		.findAny().orElse(null);
+		//@formatter:on
 	}
 }

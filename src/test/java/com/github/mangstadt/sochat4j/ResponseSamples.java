@@ -35,6 +35,35 @@ public final class ResponseSamples {
 	}
 
 	/**
+	 * Gets the HTML of the homepage after logging in.
+	 * @param site the site
+	 * @param username the username
+	 * @param userId the user ID
+	 * @return the HTML page
+	 */
+	public static String homepage(Site site, String username, int userId) {
+		String file = null;
+		switch (site) {
+		case META:
+			file = "homepage.m.html";
+			break;
+		case STACKEXCHANGE:
+			file = "homepage.se.html";
+			break;
+		case STACKOVERFLOW:
+			file = "homepage.so.html";
+			break;
+		}
+
+		//@formatter:off
+		return readFile(file)
+			.replace("${username}", username)
+			.replace("${username.lower}", username.toLowerCase())
+			.replace("${userId}", userId + "");
+		//@formatter:on
+	}
+
+	/**
 	 * Gets the HTML of a chat room that the bot has permission to post to.
 	 * @param fkey the fkey to populate the page with
 	 * @return the HTML page
@@ -70,7 +99,7 @@ public final class ResponseSamples {
 		String html = readFile("private-room.html");
 		return html.replace("${roomId}", roomId + "");
 	}
-	
+
 	/**
 	 * Gets the HTML of a chat room that doesn't exist.
 	 * @return the HTML page

@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.github.mangstadt</groupId>
 	<artifactId>sochat4j</artifactId>
-	<version>1.0.0</version>
+	<version>1.1.0</version>
 	<url>https://github.com/mangstadt/sochat4j</url>
 	
 	<properties>

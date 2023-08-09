@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
@@ -42,6 +44,8 @@ public class ChatClient implements IChatClient {
 	private final Site site;
 	private final Map<Integer, Room> rooms = new LinkedHashMap<>();
 	private boolean loggedIn = false;
+	private String username;
+	private Integer userId;
 
 	/**
 	 * Connects to a chat site.
@@ -123,6 +127,8 @@ public class ChatClient implements IChatClient {
 			throw new InvalidCredentialsException();
 		}
 
+		parseUserInfo();
+
 		/*
 		 * Note: The authenticated session info is stored in the HttpClient's
 		 * cookie store.
@@ -140,11 +146,62 @@ public class ChatClient implements IChatClient {
 		return (element == null) ? null : element.attr("value");
 	}
 
+	private void parseUserInfo() throws IOException {
+		//@formatter:off
+		String url = new URIBuilder()
+			.setScheme("https")
+			.setHost(site.getDomain())
+		.toString();
+		//@formatter:on
+
+		Http.Response response = http.get(url);
+		Document dom = response.getBodyAsHtml();
+
+		if (site == Site.STACKEXCHANGE) {
+			Element link = dom.selectFirst(".s-user-card");
+			if (link != null) {
+				String profileUrl = link.attr("href");
+				Pattern p = Pattern.compile("/users/(\\d+)");
+				Matcher m = p.matcher(profileUrl);
+				if (m.find()) {
+					userId = Integer.valueOf(m.group(1));
+				}
+
+				Element span = link.selectFirst(".v-visible-sr");
+				if (span != null) {
+					username = span.text();
+				}
+			}
+		} else {
+			Element link = dom.selectFirst(".s-user-card--info .s-user-card--link");
+			if (link != null) {
+				String profileUrl = link.attr("href");
+				Pattern p = Pattern.compile("/users/(\\d+)");
+				Matcher m = p.matcher(profileUrl);
+				if (m.find()) {
+					userId = Integer.valueOf(m.group(1));
+				}
+
+				username = link.text();
+			}
+		}
+	}
+
+	@Override
+	public String getUsername() {
+		assertLoggedIn();
+		return username;
+	}
+
+	@Override
+	public Integer getUserId() {
+		assertLoggedIn();
+		return userId;
+	}
+
 	@Override
 	public Room joinRoom(int roomId) throws RoomNotFoundException, IOException {
-		if (!loggedIn) {
-			throw new IllegalStateException("Client is not authenticated. Call the \"login\" method first.");
-		}
+		assertLoggedIn();
 
 		synchronized (rooms) {
 			Room room = rooms.get(roomId);
@@ -256,6 +313,12 @@ public class ChatClient implements IChatClient {
 			if (logger.isLoggable(Level.WARNING)) {
 				logger.log(Level.WARNING, "Problem closing HTTP connection.", e);
 			}
+		}
+	}
+
+	private void assertLoggedIn() {
+		if (!loggedIn) {
+			throw new IllegalStateException("Client is not authenticated. Call the \"login\" method first.");
 		}
 	}
 

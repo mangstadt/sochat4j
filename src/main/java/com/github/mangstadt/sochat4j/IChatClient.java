@@ -80,6 +80,22 @@ public interface IChatClient extends Closeable {
 	String getOriginalMessageContent(long messageId) throws IOException;
 
 	/**
+	 * Gets the account's username.
+	 * @return the username or null if it couldn't be found
+	 * @throws IllegalStateException if the user has not yet logged in
+	 * successfully using the {@link #login} method
+	 */
+	String getUsername();
+
+	/**
+	 * Gets the account's user ID.
+	 * @return the user ID or null if couldn't be found
+	 * @throws IllegalStateException if the user has not yet logged in
+	 * successfully using the {@link #login} method
+	 */
+	Integer getUserId();
+
+	/**
 	 * Gets the site that this chat client is connected to.
 	 * @return the site
 	 */

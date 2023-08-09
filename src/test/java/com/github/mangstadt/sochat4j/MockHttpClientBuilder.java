@@ -49,9 +49,11 @@ public class MockHttpClientBuilder {
 	 * @param email the user's email address
 	 * @param password the user's password
 	 * @param success true if the login should be successful, false if not
+	 * @param username the username
+	 * @param userId the userId
 	 * @return this
 	 */
-	public MockHttpClientBuilder login(Site site, String fkey, String email, String password, boolean success) {
+	public MockHttpClientBuilder login(Site site, String fkey, String email, String password, boolean success, String username, int userId) {
 		//@formatter:off
 		return 
 			 requestGet("https://" + site.getLoginDomain() + "/users/login")
@@ -62,7 +64,10 @@ public class MockHttpClientBuilder {
 				"email", email,
 				"password", password
 			)
-			.response(success ? 302 : 200, "");
+			.response(success ? 302 : 200, "")
+			
+			.requestGet("https://" + site.getDomain())
+			.responseOk(ResponseSamples.homepage(site, username, userId));
 		//@formatter:on
 	}
 

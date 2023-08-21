@@ -148,40 +148,23 @@ public class ChatClient implements IChatClient {
 		//@formatter:off
 		String url = new URIBuilder()
 			.setScheme("https")
-			.setHost(site.getDomain())
+			.setHost(site.getChatDomain())
 		.toString();
 		//@formatter:on
 
 		Http.Response response = http.get(url);
 		Document dom = response.getBodyAsHtml();
 
-		if (site == Site.STACKEXCHANGE) {
-			Element link = dom.selectFirst(".s-user-card");
-			if (link != null) {
-				String profileUrl = link.attr("href");
-				Pattern p = Pattern.compile("/users/(\\d+)");
-				Matcher m = p.matcher(profileUrl);
-				if (m.find()) {
-					userId = Integer.valueOf(m.group(1));
-				}
-
-				Element span = link.selectFirst(".v-visible-sr");
-				if (span != null) {
-					username = span.text();
-				}
+		Element link = dom.selectFirst(".topbar-menu-links a");
+		if (link != null) {
+			String profileUrl = link.attr("href");
+			Pattern p = Pattern.compile("/users/(\\d+)");
+			Matcher m = p.matcher(profileUrl);
+			if (m.find()) {
+				userId = Integer.valueOf(m.group(1));
 			}
-		} else {
-			Element link = dom.selectFirst(".s-user-card--info .s-user-card--link");
-			if (link != null) {
-				String profileUrl = link.attr("href");
-				Pattern p = Pattern.compile("/users/(\\d+)");
-				Matcher m = p.matcher(profileUrl);
-				if (m.find()) {
-					userId = Integer.valueOf(m.group(1));
-				}
 
-				username = link.text();
-			}
+			username = link.text();
 		}
 	}
 

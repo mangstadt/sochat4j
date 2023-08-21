@@ -66,7 +66,7 @@ public class MockHttpClientBuilder {
 			)
 			.response(success ? 302 : 200, "")
 			
-			.requestGet("https://" + site.getDomain())
+			.requestGet("https://" + site.getChatDomain())
 			.responseOk(ResponseSamples.homepage(site, username, userId));
 		//@formatter:on
 	}

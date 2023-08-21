@@ -49,7 +49,7 @@ public class ChatClientTest {
 				)
 				.response(302, "")
 				
-				.requestGet("https://" + site.getDomain())
+				.requestGet("https://" + site.getChatDomain())
 				.responseOk("<html>Page structure is different than what is expected.</html>")
 			.build();
 			//@formatter:on

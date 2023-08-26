@@ -14,9 +14,14 @@ import java.util.regex.Pattern;
 
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 import org.glassfish.tyrus.client.ClientManager;
 import org.glassfish.tyrus.client.ClientProperties;
 import org.glassfish.tyrus.container.jdk.client.JdkClientContainer;
@@ -236,8 +241,8 @@ public class ChatClient implements IChatClient {
 			.setPathSegments("message", Long.toString(messageId))
 			.setParameter("plain", "true")
 		.toString();
-		//@formatter:off
-		
+		//@formatter:on
+
 		Http.Response response = http.get(url);
 		int statusCode = response.getStatusCode();
 		if (statusCode != 200) {
@@ -246,7 +251,65 @@ public class ChatClient implements IChatClient {
 
 		return response.getBody();
 	}
-	
+
+	@Override
+	public String uploadImage(String url) throws IOException {
+		return uploadImage(null, url);
+	}
+
+	@Override
+	public String uploadImage(byte[] data) throws IOException {
+		return uploadImage(data, null);
+	}
+
+	private String uploadImage(byte[] imageData, String imageUrl) throws IOException {
+		//@formatter:off
+		String url = baseUri()
+			.setPath("/upload/image")
+		.toString();
+		//@formatter:on
+
+		HttpPost request = new HttpPost(url);
+
+		MultipartEntityBuilder meb = MultipartEntityBuilder.create();
+		if (imageData != null) {
+			meb.addBinaryBody("filename", imageData, ContentType.DEFAULT_BINARY, "file.jpg");
+		}
+		if (imageUrl != null) {
+			meb.addTextBody("upload-url", imageUrl);
+		}
+		request.setEntity(meb.build());
+
+		String exceptionPreamble = "Uploading image";
+		if (imageUrl != null) {
+			exceptionPreamble += " '" + imageUrl + "'";
+		}
+
+		String html;
+		try (CloseableHttpResponse response = http.getClient().execute(request)) {
+			int status = response.getStatusLine().getStatusCode();
+			if (status != 200) {
+				throw new IOException(exceptionPreamble + " resulted in HTTP " + status + " response.");
+			}
+
+			html = EntityUtils.toString(response.getEntity());
+		}
+
+		Pattern p = Pattern.compile("var error = '(.*?)';");
+		Matcher m = p.matcher(html);
+		if (m.find()) {
+			throw new IOException(exceptionPreamble + " resulted in error: " + m.group(1));
+		}
+
+		p = Pattern.compile("var result = '(.*?)';");
+		m = p.matcher(html);
+		if (m.find()) {
+			return m.group(1);
+		}
+
+		throw new IOException(exceptionPreamble + " resulted in unexpected response: " + html);
+	}
+
 	@Override
 	public Site getSite() {
 		return site;

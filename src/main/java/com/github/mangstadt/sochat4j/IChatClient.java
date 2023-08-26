@@ -88,6 +88,24 @@ public interface IChatClient extends Closeable {
 	String getOriginalMessageContent(long messageId) throws IOException;
 
 	/**
+	 * Uploads an image to Stack Overflow's imgur.com service. This method does
+	 * not require authentication (see {@link #login}).
+	 * @param url the image URL
+	 * @return the imgur.com URL
+	 * @throws IOException if there's a problem uploading the image
+	 */
+	String uploadImage(String url) throws IOException;
+
+	/**
+	 * Uploads an image to Stack Overflow's imgur.com service. This method does
+	 * not require authentication (see {@link #login}).
+	 * @param data the image data
+	 * @return the imgur.com URL
+	 * @throws IOException if there's a problem uploading the image
+	 */
+	String uploadImage(byte[] data) throws IOException;
+
+	/**
 	 * Gets the account's username.
 	 * @return the username or null if it couldn't be automatically retrieved.
 	 * @throws IllegalStateException if the user has not yet logged in

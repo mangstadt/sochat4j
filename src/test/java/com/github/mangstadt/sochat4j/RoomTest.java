@@ -1168,7 +1168,7 @@ public class RoomTest {
 				"text", "edited",
 				"fkey", "0123456789abcdef0123456789abcdef"
 			)
-			.responseOk("\"It is too late to edit this message.\"")
+			.responseOk("\"It is too late to edit this message\"")
 					
 			.requestPost("https://chat.stackoverflow.com/messages/20157247",
 				"text", "edited",

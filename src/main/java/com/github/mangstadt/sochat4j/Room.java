@@ -503,11 +503,14 @@ public class Room implements IRoom {
 				 * We already checked to make sure the room exists. So, if a 404
 				 * response is returned when trying to send a message, it likely
 				 * means that the bot's permission to post messages has been
-				 * revoked.
+				 * revoked for one reason or another.
 				 * 
-				 * If a 404 response is returned from this request, the response
-				 * body reads:
+				 * Examples of what the response body will be set to with 404
+				 * responses:
 				 * "The room does not exist, or you do not have permission"
+				 * "Your account is blocked, ending in 5 hours"
+				 * "Your account is blocked, ending on Oct 2 at 1:37"
+				 * "The room is in timeout, ending in 58 seconds"
 				 */
 				throw notFound(response, "post a message");
 			}

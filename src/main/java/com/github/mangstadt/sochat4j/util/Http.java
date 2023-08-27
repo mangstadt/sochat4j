@@ -30,7 +30,6 @@ import org.xml.sax.SAXException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Helper class for sending HTTP requests.
@@ -270,7 +269,7 @@ public class Http implements Closeable {
 		 */
 		public JsonNode getBodyAsJson() throws JsonProcessingException {
 			String bodyStr = getBody();
-			return (bodyStr == null) ? null : new ObjectMapper().readTree(bodyStr);
+			return (bodyStr == null) ? null : JsonUtils.parse(bodyStr);
 		}
 
 		/**
@@ -284,7 +283,7 @@ public class Http implements Closeable {
 		 */
 		public <T> T getBodyAsJson(Class<T> clazz) throws JsonProcessingException {
 			String bodyStr = getBody();
-			return (bodyStr == null) ? null : new ObjectMapper().readValue(bodyStr, clazz);
+			return (bodyStr == null) ? null : JsonUtils.parse(bodyStr, clazz);
 		}
 
 		/**

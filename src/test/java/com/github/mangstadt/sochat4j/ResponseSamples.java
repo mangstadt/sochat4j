@@ -9,7 +9,6 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.util.RawValue;
@@ -22,8 +21,6 @@ import com.github.mangstadt.sochat4j.util.JsonUtils;
  * @author Michael Angstadt
  */
 public final class ResponseSamples {
-	private static final ObjectMapper mapper = new ObjectMapper();
-
 	/**
 	 * Gets the HTML of the login page.
 	 * @param fkey the fkey to populate the page with.
@@ -142,8 +139,11 @@ public final class ResponseSamples {
 	 * @return the JSON response
 	 */
 	public static String wsAuth(String url) {
-		ObjectNode root = mapper.createObjectNode();
-		root.put("url", url);
+		//@formatter:off
+		ObjectNode root = JsonUtils.newObject()
+			.put("url", url);
+		//@formatter:on
+
 		return JsonUtils.prettyPrint(root);
 	}
 
@@ -153,9 +153,12 @@ public final class ResponseSamples {
 	 * @return the JSON response
 	 */
 	public static String newMessage(long id) {
-		ObjectNode root = mapper.createObjectNode();
-		root.put("id", id);
-		root.put("time", (System.currentTimeMillis() / 1000));
+		//@formatter:off
+		ObjectNode root = JsonUtils.newObject()
+			.put("id", id)
+			.put("time", (System.currentTimeMillis() / 1000));
+		//@formatter:on
+
 		return JsonUtils.prettyPrint(root);
 	}
 
@@ -172,8 +175,8 @@ public final class ResponseSamples {
 		private final ArrayNode eventsArray;
 
 		public EventsResponseBuilder() {
-			root = mapper.createObjectNode();
-			eventsArray = mapper.createArrayNode();
+			root = JsonUtils.newObject();
+			eventsArray = root.arrayNode();
 			root.set("events", eventsArray);
 		}
 
@@ -189,15 +192,14 @@ public final class ResponseSamples {
 		 */
 		public EventsResponseBuilder event(long timestamp, String content, int userId, String username, int roomId, long messageId) {
 			//@formatter:off
-			eventsArray.add(mapper.createObjectNode()
+			eventsArray.addObject()
 				.put("event_type", 1)
 				.put("time_stamp", timestamp)
 				.put("content", content)
 				.put("user_id", userId)
 				.put("user_name", username)
 				.put("room_id", roomId)
-				.put("message_id", messageId)
-			);
+				.put("message_id", messageId);
 			//@formatter:on
 
 			return this;
@@ -225,7 +227,7 @@ public final class ResponseSamples {
 		private final ArrayNode root;
 
 		public PingableUsersBuilder() {
-			root = mapper.createArrayNode();
+			root = JsonUtils.newArray();
 		}
 
 		/**
@@ -238,12 +240,11 @@ public final class ResponseSamples {
 		 */
 		public PingableUsersBuilder user(int userId, String username, long unknown, long lastMessage) {
 			//@formatter:off
-			root.add(mapper.createArrayNode()
+			root.addArray()
 				.add(userId)
 				.add(username)
 				.add(unknown)
-				.add(lastMessage)
-			);
+				.add(lastMessage);
 			//@formatter:on
 
 			return this;
@@ -271,14 +272,14 @@ public final class ResponseSamples {
 		private final ArrayNode usersArray;
 
 		public UserInfoBuilder() {
-			root = mapper.createObjectNode();
-			usersArray = mapper.createArrayNode();
+			root = JsonUtils.newObject();
+			usersArray = root.arrayNode();
 			root.set("users", usersArray);
 		}
 
 		public UserInfoBuilder user(int userId, String username, String emailHash, int reputation, boolean moderator, boolean owner, long lastPost, long lastSeen) {
 			//@formatter:off
-			usersArray.add(mapper.createObjectNode()
+			usersArray.addObject()
 				.put("id", userId)
 				.put("name", username)
 				
@@ -294,8 +295,7 @@ public final class ResponseSamples {
 				.put("is_moderator", moderator)
 				.put("is_owner", (owner ? true : null))
 				.put("last_post", lastPost)
-				.put("last_seen", lastSeen)
-			);
+				.put("last_seen", lastSeen);
 			//@formatter:on
 
 			return this;
@@ -326,7 +326,7 @@ public final class ResponseSamples {
 			.map(tag -> tag.replace("\"", "\\\""))
 		.collect(Collectors.joining(" "));
 		
-		return JsonUtils.prettyPrint(mapper.createObjectNode()
+		ObjectNode root = JsonUtils.newObject()
 			.put("id", id)
 			.put("name", name)
 			.put("description", description)
@@ -339,8 +339,10 @@ public final class ResponseSamples {
 			 * "raw value" in order to include these escape sequences in the JSON
 			 * object.
 			 */
-			.putRawValue("tags", new RawValue("\"" + tagsValue + "\"")));
+			.putRawValue("tags", new RawValue("\"" + tagsValue + "\""));
 		//@formatter:on
+
+		return JsonUtils.prettyPrint(root);
 	}
 
 	/**

@@ -28,8 +28,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mangstadt.sochat4j.event.Event;
 import com.github.mangstadt.sochat4j.event.MessageDeletedEvent;
 import com.github.mangstadt.sochat4j.event.MessageEditedEvent;
@@ -74,8 +74,6 @@ public class Room implements IRoom {
 	private final WebSocketContainer webSocketContainer;
 	private Session webSocketSession;
 	private final Timer websocketReconnectTimer;
-
-	private final ObjectMapper mapper = new ObjectMapper();
 
 	private final Map<Class<? extends Event>, List<Consumer<Event>>> listeners;
 	{
@@ -302,8 +300,8 @@ public class Room implements IRoom {
 	private void handleWebSocketMessage(String json) {
 		JsonNode node;
 		try {
-			node = mapper.readTree(json);
-		} catch (IOException e) {
+			node = JsonUtils.parse(json);
+		} catch (JsonProcessingException e) {
 			logger.log(Level.SEVERE, "[room " + roomId + "]: Problem parsing JSON from web socket:\n" + json, e);
 			return;
 		}

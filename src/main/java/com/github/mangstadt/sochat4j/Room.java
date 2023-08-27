@@ -619,7 +619,7 @@ public class Room implements IRoom {
 			break;
 		case "\"This message has already been deleted and cannot be edited\"":
 			throw new IOException("Message " + messageId + " cannot be edited because it was deleted.");
-		case "\"It is too late to edit this message.\"":
+		case "\"It is too late to edit this message\"":
 			throw new IOException("Message " + messageId + " cannot be edited because it is too old.");
 		case "\"You can only edit your own messages\"":
 			throw new IOException("Message " + messageId + " cannot be edited because it was posted by somebody else.");

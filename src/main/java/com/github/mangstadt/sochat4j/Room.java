@@ -31,6 +31,7 @@ import org.jsoup.nodes.Element;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.mangstadt.sochat4j.event.Event;
+import com.github.mangstadt.sochat4j.event.InvitationEvent;
 import com.github.mangstadt.sochat4j.event.MessageDeletedEvent;
 import com.github.mangstadt.sochat4j.event.MessageEditedEvent;
 import com.github.mangstadt.sochat4j.event.MessagePostedEvent;
@@ -79,6 +80,7 @@ public class Room implements IRoom {
 	{
 		Map<Class<? extends Event>, List<Consumer<Event>>> map = new HashMap<>();
 		map.put(Event.class, new ArrayList<>());
+		map.put(InvitationEvent.class, new ArrayList<>());
 		map.put(MessageDeletedEvent.class, new ArrayList<>());
 		map.put(MessageEditedEvent.class, new ArrayList<>());
 		map.put(MessagePostedEvent.class, new ArrayList<>());

@@ -12,6 +12,7 @@ import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.mangstadt.sochat4j.event.Event;
+import com.github.mangstadt.sochat4j.event.InvitationEvent;
 import com.github.mangstadt.sochat4j.event.MessageDeletedEvent;
 import com.github.mangstadt.sochat4j.event.MessageEditedEvent;
 import com.github.mangstadt.sochat4j.event.MessagePostedEvent;
@@ -121,6 +122,39 @@ class WebSocketEventParsers {
 	 */
 	public static UserLeftEvent userLeft(JsonNode element) {
 		UserLeftEvent.Builder builder = new UserLeftEvent.Builder();
+
+		extractCommonEventFields(element, builder);
+
+		JsonNode value = element.get("room_id");
+		if (value != null) {
+			builder.roomId(value.asInt());
+		}
+
+		value = element.get("room_name");
+		if (value != null) {
+			builder.roomName(value.asText());
+		}
+
+		value = element.get("user_id");
+		if (value != null) {
+			builder.userId(value.asInt());
+		}
+
+		value = element.get("user_name");
+		if (value != null) {
+			builder.username(value.asText());
+		}
+
+		return builder.build();
+	}
+
+	/**
+	 * Parses an "room invitation" event.
+	 * @param element the JSON element to parse
+	 * @return the parsed event
+	 */
+	public static InvitationEvent invitation(JsonNode element) {
+		InvitationEvent.Builder builder = new InvitationEvent.Builder();
 
 		extractCommonEventFields(element, builder);
 
@@ -559,7 +593,7 @@ class WebSocketEventParsers {
 
 		return builder.build();
 	}
-	
+
 	/**
 	 * Converts a timestamp to a {@link LocalDateTime} instance.
 	 * @param ts the timestamp (seconds since epoch)

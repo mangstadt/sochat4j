@@ -356,6 +356,9 @@ public class Room implements IRoom {
 			case MESSAGE_EDITED:
 				event = WebSocketEventParsers.messageEdited(eventNode);
 				break;
+			case INVITATION:
+				event = WebSocketEventParsers.invitation(eventNode);
+				break;
 			case USER_ENTERED:
 				event = WebSocketEventParsers.userEntered(eventNode);
 				break;

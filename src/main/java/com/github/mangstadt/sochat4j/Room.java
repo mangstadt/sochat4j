@@ -9,11 +9,13 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.function.Consumer;
@@ -22,6 +24,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.apache.http.client.utils.URIBuilder;
 import org.jsoup.Jsoup;
@@ -331,47 +334,19 @@ public class Room implements IRoom {
 			eventsToPublish.add(movedIn);
 		}
 
-		/*
-		 * Sort the remaining event nodes by event ID, to make sure they
-		 * are processed in the same order they were received from the web
-		 * socket.
-		 */
-		List<JsonNode> remainingEventNodes = sortEventsById(eventsByType);
+		//@formatter:off
+		eventsByType.values().stream()
+			.flatMap(List::stream)
+			.map(this::parseEvent)
+			.filter(Objects::nonNull)
 
-		for (JsonNode eventNode : remainingEventNodes) {
-			int id = eventNode.get("event_type").asInt();
-			WebSocketEventType eventType = WebSocketEventType.get(id);
-
-			Event event;
-			switch (eventType) {
-			case MESSAGE_POSTED:
-				event = WebSocketEventParsers.messagePosted(eventNode);
-				break;
-			case MESSAGE_EDITED:
-				event = WebSocketEventParsers.messageEdited(eventNode);
-				break;
-			case INVITATION:
-				event = WebSocketEventParsers.invitation(eventNode);
-				break;
-			case USER_ENTERED:
-				event = WebSocketEventParsers.userEntered(eventNode);
-				break;
-			case USER_LEFT:
-				event = WebSocketEventParsers.userLeft(eventNode);
-				break;
-			case MESSAGE_STARRED:
-				event = WebSocketEventParsers.messageStarred(eventNode);
-				break;
-			case MESSAGE_DELETED:
-				event = WebSocketEventParsers.messageDeleted(eventNode);
-				break;
-			default:
-				logger.warning(() -> "[room " + roomId + "]: Ignoring event with unknown \"event_type\":\n" + JsonUtils.prettyPrint(eventNode) + "\n");
-				continue;
-			}
-
-			eventsToPublish.add(event);
-		}
+			/*
+			 * Sort by event ID to ensure they are processed in the same order
+			 * they were received.
+			 */
+			.sorted(Comparator.comparing(Event::getEventId))
+		.forEach(eventsToPublish::add);
+		//@formatter:on
 
 		List<Consumer<Event>> genericListeners = listeners.get(Event.class);
 		synchronized (genericListeners) {
@@ -417,26 +392,29 @@ public class Room implements IRoom {
 		return eventsByType;
 	}
 
-	private List<JsonNode> sortEventsById(Map<WebSocketEventType, List<JsonNode>> eventsByType) {
-		List<JsonNode> remainingEventNodes = new ArrayList<>();
+	private Event parseEvent(JsonNode node) {
+		int id = node.get("event_type").asInt();
+		WebSocketEventType eventType = WebSocketEventType.get(id);
 
-		eventsByType.values().forEach(remainingEventNodes::addAll);
-
-		remainingEventNodes.sort((a, b) -> {
-			JsonNode idNode = a.get("id");
-			long id1 = (idNode == null) ? 0 : idNode.asLong();
-
-			idNode = b.get("id");
-			long id2 = (idNode == null) ? 0 : idNode.asLong();
-
-			/*
-			 * Do not return "id1 - id2" because this could result in a
-			 * value that won't fit into an integer.
-			 */
-			return Long.compare(id1, id2);
-		});
-
-		return remainingEventNodes;
+		switch (eventType) {
+		case MESSAGE_POSTED:
+			return WebSocketEventParsers.messagePosted(node);
+		case MESSAGE_EDITED:
+			return WebSocketEventParsers.messageEdited(node);
+		case INVITATION:
+			return WebSocketEventParsers.invitation(node);
+		case USER_ENTERED:
+			return WebSocketEventParsers.userEntered(node);
+		case USER_LEFT:
+			return WebSocketEventParsers.userLeft(node);
+		case MESSAGE_STARRED:
+			return WebSocketEventParsers.messageStarred(node);
+		case MESSAGE_DELETED:
+			return WebSocketEventParsers.messageDeleted(node);
+		default:
+			logger.warning(() -> "[room " + roomId + "]: Ignoring event with unknown \"event_type\":\n" + JsonUtils.prettyPrint(node) + "\n");
+			return null;
+		}
 	}
 
 	@Override
@@ -635,74 +613,77 @@ public class Room implements IRoom {
 
 		JsonNode usersNode = response.getBodyAsJson().get("users");
 		if (usersNode == null || !usersNode.isArray()) {
-			return new ArrayList<>(0);
+			return List.of();
 		}
 
-		List<UserInfo> users = new ArrayList<>(usersNode.size());
-		for (JsonNode userNode : usersNode) {
-			UserInfo.Builder builder = new UserInfo.Builder();
+		//@formatter:off
+		return StreamSupport.stream(usersNode.spliterator(), false)
+			.map(this::parseUserInfo)
+		.collect(Collectors.toList());
+		//@formatter:on
+	}
 
-			builder.roomId(roomId);
+	private UserInfo parseUserInfo(JsonNode userNode) {
+		UserInfo.Builder builder = new UserInfo.Builder();
 
-			JsonNode node = userNode.get("id");
-			if (node != null) {
-				builder.userId(node.asInt());
-			}
+		builder.roomId(roomId);
 
-			node = userNode.get("name");
-			if (node != null) {
-				builder.username(node.asText());
-			}
-
-			node = userNode.get("email_hash");
-			if (node != null) {
-				String profilePicture;
-				String emailHash = node.asText();
-				if (emailHash.startsWith("!")) {
-					profilePicture = emailHash.substring(1);
-				} else {
-					//@formatter:off
-					profilePicture = new URIBuilder()
-						.setScheme("https")
-						.setHost("www.gravatar.com")
-						.setPathSegments("avatar", emailHash)
-						.setParameter("d", "identicon")
-						.setParameter("s", "128")
-					.toString();
-					//@formatter:on
-				}
-				builder.profilePicture(profilePicture);
-			}
-
-			node = userNode.get("reputation");
-			if (node != null) {
-				builder.reputation(node.asInt());
-			}
-
-			node = userNode.get("is_moderator");
-			if (node != null) {
-				builder.moderator(node.asBoolean());
-			}
-
-			node = userNode.get("is_owner");
-			if (node != null) {
-				builder.owner(node.asBoolean());
-			}
-
-			node = userNode.get("last_post");
-			if (node != null) {
-				builder.lastPost(WebSocketEventParsers.timestamp(node.asLong()));
-			}
-
-			node = userNode.get("last_seen");
-			if (node != null) {
-				builder.lastSeen(WebSocketEventParsers.timestamp(node.asLong()));
-			}
-
-			users.add(builder.build());
+		JsonNode node = userNode.get("id");
+		if (node != null) {
+			builder.userId(node.asInt());
 		}
 
-		return users;
+		node = userNode.get("name");
+		if (node != null) {
+			builder.username(node.asText());
+		}
+
+		node = userNode.get("email_hash");
+		if (node != null) {
+			String profilePicture;
+			String emailHash = node.asText();
+			if (emailHash.startsWith("!")) {
+				profilePicture = emailHash.substring(1);
+			} else {
+				//@formatter:off
+				profilePicture = new URIBuilder()
+					.setScheme("https")
+					.setHost("www.gravatar.com")
+					.setPathSegments("avatar", emailHash)
+					.setParameter("d", "identicon")
+					.setParameter("s", "128")
+				.toString();
+				//@formatter:on
+			}
+			builder.profilePicture(profilePicture);
+		}
+
+		node = userNode.get("reputation");
+		if (node != null) {
+			builder.reputation(node.asInt());
+		}
+
+		node = userNode.get("is_moderator");
+		if (node != null) {
+			builder.moderator(node.asBoolean());
+		}
+
+		node = userNode.get("is_owner");
+		if (node != null) {
+			builder.owner(node.asBoolean());
+		}
+
+		node = userNode.get("last_post");
+		if (node != null) {
+			builder.lastPost(WebSocketEventParsers.timestamp(node.asLong()));
+		}
+
+		node = userNode.get("last_seen");
+		if (node != null) {
+			builder.lastSeen(WebSocketEventParsers.timestamp(node.asLong()));
+		}
+
+		return builder.build();
 	}
 
 	@Override

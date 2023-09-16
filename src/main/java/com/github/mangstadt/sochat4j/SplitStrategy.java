@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 /**
  * Defines how a chat message should be split up if it exceeds the max message
@@ -62,6 +63,10 @@ public enum SplitStrategy {
 
 			@Override
 			public String next() {
+				if (!hasNext()) {
+					throw new NoSuchElementException();
+				}
+
 				final String post;
 
 				int charactersLeft = message.length() - leftBound;
@@ -219,6 +224,10 @@ public enum SplitStrategy {
 
 			@Override
 			public String next() {
+				if (!hasNext()) {
+					throw new NoSuchElementException();
+				}
+
 				final String post;
 
 				int charactersLeft = message.length() - leftBound;

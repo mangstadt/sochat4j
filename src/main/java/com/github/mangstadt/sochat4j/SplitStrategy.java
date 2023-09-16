@@ -50,7 +50,7 @@ public enum SplitStrategy {
 			 * split. If an element is false, that means it is not safe to split
 			 * the string at that index
 			 */
-			public WordSplitter(String message, int maxLength, boolean badSplitLocations[]) {
+			public WordSplitter(String message, int maxLength, boolean[] badSplitLocations) {
 				this.message = message;
 				this.maxLength = maxLength;
 				this.badSplitLocations = badSplitLocations;

@@ -1,7 +1,5 @@
 package com.github.mangstadt.sochat4j.event;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import com.github.mangstadt.sochat4j.ChatMessage;
@@ -123,7 +121,7 @@ public class MessagesMovedEvent extends Event {
 		 * @return this
 		 */
 		public Builder messages(List<ChatMessage> messages) {
-			this.messages = Collections.unmodifiableList(new ArrayList<>(messages));
+			this.messages = List.copyOf(messages);
 			return this;
 		}
 

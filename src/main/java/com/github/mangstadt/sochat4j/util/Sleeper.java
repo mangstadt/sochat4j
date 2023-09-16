@@ -68,7 +68,7 @@ public class Sleeper {
 			 * https://rules.sonarsource.com/java/RSPEC-2142/
 			 */
 			Thread.currentThread().interrupt();
-			logger.log(Level.WARNING, "Thread interrupted while sleeping.", e);
+			logger.log(Level.WARNING, e, () -> "Thread interrupted while sleeping.");
 		}
 	}
 

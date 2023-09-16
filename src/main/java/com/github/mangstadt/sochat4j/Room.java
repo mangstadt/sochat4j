@@ -177,9 +177,7 @@ public class Room implements IRoom {
 		.build();
 		//@formatter:on
 
-		if (logger.isLoggable(Level.INFO)) {
-			logger.info("Connecting to web socket [room=" + roomId + "]: " + wsUri);
-		}
+		logger.info(() -> "Connecting to web socket [room=" + roomId + "]: " + wsUri);
 
 		try {
 			webSocketSession = webSocketContainer.connectToServer(new Endpoint() {
@@ -190,7 +188,7 @@ public class Room implements IRoom {
 
 				@Override
 				public void onError(Session session, Throwable t) {
-					logger.log(Level.SEVERE, "Problem with web socket [room=" + roomId + "]. Leaving room.", t);
+					logger.log(Level.SEVERE, t, () -> "Problem with web socket [room=" + roomId + "]. Leaving room.");
 					leave();
 				}
 			}, config, wsUri);
@@ -198,9 +196,7 @@ public class Room implements IRoom {
 			throw new IOException(e);
 		}
 
-		if (logger.isLoggable(Level.INFO)) {
-			logger.info("Web socket connection successful [room=" + roomId + "]: " + wsUri);
-		}
+		logger.info(() -> "Web socket connection successful [room=" + roomId + "]: " + wsUri);
 	}
 
 	/**
@@ -214,14 +210,12 @@ public class Room implements IRoom {
 			@Override
 			public void run() {
 				synchronized (Room.this) {
-					if (logger.isLoggable(Level.INFO)) {
-						logger.info("[room=" + roomId + "]: Recreating websocket connection.");
-					}
+					logger.info(() -> "[room=" + roomId + "]: Recreating websocket connection.");
 
 					try {
 						webSocketSession.close();
 					} catch (IOException e) {
-						logger.log(Level.SEVERE, "[room=" + roomId + "]: Problem closing existing websocket session.", e);
+						logger.log(Level.SEVERE, e, () -> "[room=" + roomId + "]: Problem closing existing websocket session.");
 					}
 
 					boolean connected = false;
@@ -232,13 +226,13 @@ public class Room implements IRoom {
 							connectToWebSocket();
 							connected = true;
 						} catch (IOException e) {
-							logger.log(Level.SEVERE, "[room=" + roomId + "]: Could not recreate websocket session. Trying again in " + PAUSE_BETWEEN_WEBSOCKET_REFRESH_ATTEMPTS.getSeconds() + " seconds.", e);
+							logger.log(Level.SEVERE, e, () -> "[room=" + roomId + "]: Could not recreate websocket session. Trying again in " + PAUSE_BETWEEN_WEBSOCKET_REFRESH_ATTEMPTS.getSeconds() + " seconds.");
 							Sleeper.sleep(PAUSE_BETWEEN_WEBSOCKET_REFRESH_ATTEMPTS);
 						}
 					}
 
 					if (!connected) {
-						logger.severe("[room=" + roomId + "]: Could not recreate websocket session after " + attempts + " tries. Leaving the room.");
+						logger.severe(() -> "[room=" + roomId + "]: Could not recreate websocket session after " + MAX_WEBSOCKET_REFRESH_ATTEMPTS + " tries. Leaving the room.");
 						leave();
 					}
 				}
@@ -304,13 +298,11 @@ public class Room implements IRoom {
 		try {
 			node = JsonUtils.parse(json);
 		} catch (JsonProcessingException e) {
-			logger.log(Level.SEVERE, "[room " + roomId + "]: Problem parsing JSON from web socket:\n" + json, e);
+			logger.log(Level.SEVERE, e, () -> "[room " + roomId + "]: Problem parsing JSON from web socket:\n" + json);
 			return;
 		}
 
-		if (logger.isLoggable(Level.FINE)) {
-			logger.fine("[room " + roomId + "]: Received message:\n" + JsonUtils.prettyPrint(node) + "\n");
-		}
+		logger.fine(() -> "[room " + roomId + "]: Received message:\n" + JsonUtils.prettyPrint(node) + "\n");
 
 		JsonNode roomNode = node.get("r" + roomId);
 		if (roomNode == null) {
@@ -374,9 +366,7 @@ public class Room implements IRoom {
 				event = WebSocketEventParsers.messageDeleted(eventNode);
 				break;
 			default:
-				if (logger.isLoggable(Level.WARNING)) {
-					logger.warning("[room " + roomId + "]: Ignoring event with unknown \"event_type\":\n" + JsonUtils.prettyPrint(eventNode) + "\n");
-				}
+				logger.warning(() -> "[room " + roomId + "]: Ignoring event with unknown \"event_type\":\n" + JsonUtils.prettyPrint(eventNode) + "\n");
 				continue;
 			}
 
@@ -411,17 +401,13 @@ public class Room implements IRoom {
 		for (JsonNode eventNode : eventsNode) {
 			JsonNode eventTypeNode = eventNode.get("event_type");
 			if (eventTypeNode == null || !eventTypeNode.canConvertToInt()) {
-				if (logger.isLoggable(Level.WARNING)) {
-					logger.warning("[room " + roomId + "]: Ignoring JSON object that does not have a valid \"event_type\" field:\n" + JsonUtils.prettyPrint(eventNode) + "\n");
-				}
+				logger.warning(() -> "[room " + roomId + "]: Ignoring JSON object that does not have a valid \"event_type\" field:\n" + JsonUtils.prettyPrint(eventNode) + "\n");
 				continue;
 			}
 
 			WebSocketEventType eventType = WebSocketEventType.get(eventTypeNode.asInt());
 			if (eventType == null) {
-				if (logger.isLoggable(Level.WARNING)) {
-					logger.warning("[room " + roomId + "]: Ignoring event with unknown \"event_type\":\n" + JsonUtils.prettyPrint(eventNode) + "\n");
-				}
+				logger.warning(() -> "[room " + roomId + "]: Ignoring event with unknown \"event_type\":\n" + JsonUtils.prettyPrint(eventNode) + "\n");
 				continue;
 			}
 
@@ -590,9 +576,7 @@ public class Room implements IRoom {
 		case "\"You can only delete your own messages\"":
 			throw new IOException("Message " + messageId + " cannot be deleted because it was posted by somebody else.");
 		default:
-			if (logger.isLoggable(Level.WARNING)) {
-				logger.warning("Unexpected response when attempting to delete message [room=" + roomId + ", id=" + messageId + "]: " + body);
-			}
+			logger.warning(() -> "Unexpected response when attempting to delete message [room=" + roomId + ", id=" + messageId + "]: " + body);
 			break;
 		}
 	}
@@ -627,9 +611,7 @@ public class Room implements IRoom {
 		case "\"You can only edit your own messages\"":
 			throw new IOException("Message " + messageId + " cannot be edited because it was posted by somebody else.");
 		default:
-			if (logger.isLoggable(Level.WARNING)) {
-				logger.warning("Unexpected response when attempting to edit message [room=" + roomId + ", id=" + messageId + "]: " + body);
-			}
+			logger.warning(() -> "Unexpected response when attempting to edit message [room=" + roomId + ", id=" + messageId + "]: " + body);
 			break;
 		}
 	}
@@ -811,13 +793,13 @@ public class Room implements IRoom {
 			);
 			//@formatter:on
 		} catch (Exception e) {
-			logger.log(Level.SEVERE, "[room=" + roomId + "]: Problem leaving room.", e);
+			logger.log(Level.SEVERE, e, () -> "[room=" + roomId + "]: Problem leaving room.");
 		}
 
 		try {
 			close();
 		} catch (IOException e) {
-			logger.log(Level.SEVERE, "[room=" + roomId + "]: Problem closing websocket session.", e);
+			logger.log(Level.SEVERE, e, () -> "[room=" + roomId + "]: Problem closing websocket session.");
 		}
 	}
 

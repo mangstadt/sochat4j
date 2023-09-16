@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.http.Consts;
@@ -54,13 +53,8 @@ public class Http implements Closeable {
 	 * @throws IOException if there's a problem sending the request
 	 */
 	public Response head(String uri) throws IOException {
-		HttpHead request = new HttpHead(uri);
-
-		if (logger.isLoggable(Level.FINE)) {
-			logger.fine("Sending request [method=HEAD; URI=" + uri + "]...");
-		}
-
-		return send(request);
+		logger.fine(() -> "Sending request [method=HEAD; URI=" + uri + "]...");
+		return send(new HttpHead(uri));
 	}
 
 	/**
@@ -70,13 +64,8 @@ public class Http implements Closeable {
 	 * @throws IOException if there's a problem sending the request
 	 */
 	public Response get(String uri) throws IOException {
-		HttpGet request = new HttpGet(uri);
-
-		if (logger.isLoggable(Level.FINE)) {
-			logger.fine("Sending request [method=GET; URI=" + uri + "]...");
-		}
-
-		return send(request);
+		logger.fine(() -> "Sending request [method=GET; URI=" + uri + "]...");
+		return send(new HttpGet(uri));
 	}
 
 	/**
@@ -131,9 +120,7 @@ public class Http implements Closeable {
 			request.setEntity(new UrlEncodedFormEntity(params, Consts.UTF_8));
 		}
 
-		if (logger.isLoggable(Level.FINE)) {
-			logger.fine("Sending request [method=POST; URI=" + uri + "; params=" + Arrays.toString(parameters) + "]...");
-		}
+		logger.fine(() -> "Sending request [method=POST; URI=" + uri + "; params=" + Arrays.toString(parameters) + "]...");
 
 		return send(request, rateLimitHandler);
 	}
@@ -188,9 +175,7 @@ public class Http implements Closeable {
 			}
 
 			Duration sleep = rateLimitHandler.getWaitTime(response);
-			if (logger.isLoggable(Level.INFO)) {
-				logger.info("Sleeping for " + sleep.toMillis() + "ms before resending the request...");
-			}
+			logger.info(() -> "Sleeping for " + sleep.toMillis() + "ms before resending the request...");
 			Sleeper.sleep(sleep);
 		}
 

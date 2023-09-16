@@ -335,7 +335,7 @@ public class ChatClient implements IChatClient {
 					);
 					//@formatter:on
 				} catch (IOException e) {
-					logger.log(Level.SEVERE, "Problem leaving all rooms.", e);
+					logger.log(Level.SEVERE, e, () -> "Problem leaving all rooms.");
 				}
 			}
 
@@ -343,9 +343,7 @@ public class ChatClient implements IChatClient {
 				try {
 					room.close();
 				} catch (IOException e) {
-					if (logger.isLoggable(Level.WARNING)) {
-						logger.log(Level.WARNING, "Problem closing websocket connection for room " + room.getRoomId() + ".", e);
-					}
+					logger.log(Level.WARNING, e, () -> "Problem closing websocket connection for room " + room.getRoomId() + ".");
 				}
 			}
 			rooms.clear();
@@ -354,9 +352,7 @@ public class ChatClient implements IChatClient {
 		try {
 			http.close();
 		} catch (IOException e) {
-			if (logger.isLoggable(Level.WARNING)) {
-				logger.log(Level.WARNING, "Problem closing HTTP connection.", e);
-			}
+			logger.log(Level.WARNING, e, () -> "Problem closing HTTP connection.");
 		}
 	}
 

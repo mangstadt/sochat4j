@@ -38,7 +38,7 @@ public abstract class Event {
 	 * @param <U> allows the setter methods to return instances of the
 	 * implementing child class
 	 */
-	public static abstract class Builder<T extends Event, U extends Builder<?, ?>> {
+	public abstract static class Builder<T extends Event, U extends Builder<?, ?>> {
 		protected LocalDateTime timestamp;
 		protected long eventId;
 

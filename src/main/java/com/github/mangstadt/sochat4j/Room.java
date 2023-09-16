@@ -8,10 +8,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -79,20 +77,19 @@ public class Room implements IRoom {
 	private Session webSocketSession;
 	private final Timer websocketReconnectTimer;
 
-	private final Map<Class<? extends Event>, List<Consumer<Event>>> listeners;
-	{
-		Map<Class<? extends Event>, List<Consumer<Event>>> map = new HashMap<>();
-		map.put(Event.class, new ArrayList<>());
-		map.put(InvitationEvent.class, new ArrayList<>());
-		map.put(MessageDeletedEvent.class, new ArrayList<>());
-		map.put(MessageEditedEvent.class, new ArrayList<>());
-		map.put(MessagePostedEvent.class, new ArrayList<>());
-		map.put(MessagesMovedEvent.class, new ArrayList<>());
-		map.put(MessageStarredEvent.class, new ArrayList<>());
-		map.put(UserEnteredEvent.class, new ArrayList<>());
-		map.put(UserLeftEvent.class, new ArrayList<>());
-		this.listeners = Collections.unmodifiableMap(map);
-	}
+	//@formatter:off
+	private final Map<Class<? extends Event>, List<Consumer<Event>>> listeners = Map.of(
+		Event.class, new ArrayList<>(),
+		InvitationEvent.class, new ArrayList<>(),
+		MessageDeletedEvent.class, new ArrayList<>(),
+		MessageEditedEvent.class, new ArrayList<>(),
+		MessagePostedEvent.class, new ArrayList<>(),
+		MessagesMovedEvent.class, new ArrayList<>(),
+		MessageStarredEvent.class, new ArrayList<>(),
+		UserEnteredEvent.class, new ArrayList<>(),
+		UserLeftEvent.class, new ArrayList<>()
+	);
+	//@formatter:on
 
 	/**
 	 * Creates a connection to a specific chat room. This constructor is meant

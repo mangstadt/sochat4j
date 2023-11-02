@@ -365,6 +365,27 @@ public class ChatClientTest {
 
 	@Test
 	@SuppressWarnings("resource")
+	public void getMessageContent() throws Exception {
+		//@formatter:off
+		CloseableHttpClient httpClient = new MockHttpClientBuilder()	
+			//login not required
+
+			.requestGet("https://chat.stackoverflow.com/message/1234?plain=false")
+			.responseOk("Message")
+		.build();
+		//@formatter:on
+
+		WebSocketContainer ws = mock(WebSocketContainer.class);
+
+		ChatClient client = new ChatClient(Site.STACKOVERFLOW, httpClient, ws);
+
+		String expected = "Message";
+		String actual = client.getMessageContent(1234);
+		assertEquals(expected, actual);
+	}
+
+	@Test
+	@SuppressWarnings("resource")
 	public void getOriginalMessageContent() throws Exception {
 		//@formatter:off
 		CloseableHttpClient httpClient = new MockHttpClientBuilder()	

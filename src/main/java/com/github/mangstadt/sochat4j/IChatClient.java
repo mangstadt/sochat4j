@@ -67,6 +67,25 @@ public interface IChatClient extends Closeable {
 
 	/**
 	 * <p>
+	 * Queries the chat service for the HTML-formatted content of the given
+	 * message.
+	 * </p>
+	 * <p>
+	 * This returns the same content that you get from the web socket--an
+	 * HTML-formatted version of the user's Markdown-formatted message.
+	 * </p>
+	 * <p>
+	 * This method does not require authentication (see {@link #login}).
+	 * </p>
+	 * @param messageId the message ID
+	 * @return the message content
+	 * @throws IOException if there's a network problem or a non-200 response
+	 * was returned
+	 */
+	String getMessageContent(long messageId) throws IOException;
+
+	/**
+	 * <p>
 	 * Queries the chat service for the original, Markdown-encoded message that
 	 * the user typed into the chat room. This differs from the HTML-formatted
 	 * messages that you get from the web socket.

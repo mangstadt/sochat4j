@@ -236,10 +236,19 @@ public class ChatClient implements IChatClient {
 
 	@Override
 	public String getOriginalMessageContent(long messageId) throws IOException {
+		return getMessageContent(messageId, true);
+	}
+
+	@Override
+	public String getMessageContent(long messageId) throws IOException {
+		return getMessageContent(messageId, false);
+	}
+
+	private String getMessageContent(long messageId, boolean plain) throws IOException {
 		//@formatter:off
 		String url = baseUri()
 			.setPathSegments("message", Long.toString(messageId))
-			.setParameter("plain", "true")
+			.setParameter("plain", plain ? "true" : "false")
 		.toString();
 		//@formatter:on
 

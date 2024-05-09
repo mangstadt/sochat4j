@@ -3,12 +3,12 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.github.mangstadt</groupId>
 	<artifactId>sochat4j</artifactId>
-	<version>2.3.1</version>
+	<version>3.3.1</version>
 	<url>https://github.com/mangstadt/sochat4j</url>
 	
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<java.version>11</java.version>
+		<java.version>17</java.version>
 	</properties>
 
 	<build>

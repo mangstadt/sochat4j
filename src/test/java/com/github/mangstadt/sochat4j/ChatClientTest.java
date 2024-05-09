@@ -19,7 +19,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.util.Arrays;
+import java.util.List;
 
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -38,7 +38,7 @@ public class ChatClientTest {
 	public void user_info_cant_find_on_homepage() throws Exception {
 		for (Site site : Site.values()) {
 			//@formatter:off
-			CloseableHttpClient httpClient = new MockHttpClientBuilder()
+			var httpClient = new MockHttpClientBuilder()
 				.requestGet("https://" + site.getLoginDomain() + "/users/login")
 				.responseOk(ResponseSamples.loginPage("0123456789abcdef0123456789abcdef"))
 			
@@ -54,9 +54,9 @@ public class ChatClientTest {
 			.build();
 			//@formatter:on
 
-			WebSocketContainer ws = mock(WebSocketContainer.class);
+			var ws = mock(WebSocketContainer.class);
 
-			try (ChatClient client = new ChatClient(site, httpClient, ws)) {
+			try (var client = new ChatClient(site, httpClient, ws)) {
 				client.login("email", "password");
 
 				assertNull(client.getUsername());
@@ -71,14 +71,14 @@ public class ChatClientTest {
 	public void user_info() throws Exception {
 		for (Site site : Site.values()) {
 			//@formatter:off
-			CloseableHttpClient httpClient = new MockHttpClientBuilder()
+			var httpClient = new MockHttpClientBuilder()
 				.login(site, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
 			.build();
 			//@formatter:on
 
 			WebSocketContainer ws = mock(WebSocketContainer.class);
 
-			try (ChatClient client = new ChatClient(site, httpClient, ws)) {
+			try (var client = new ChatClient(site, httpClient, ws)) {
 				client.login("email", "password");
 
 				assertEquals("Username", client.getUsername());
@@ -92,13 +92,13 @@ public class ChatClientTest {
 	@Test(expected = IllegalStateException.class)
 	public void joinRoom_not_logged_in() throws Exception {
 		//@formatter:off
-		CloseableHttpClient httpClient = new MockHttpClientBuilder()
+		var httpClient = new MockHttpClientBuilder()
 		.build();
 		//@formatter:on
 
 		WebSocketContainer ws = mock(WebSocketContainer.class);
 
-		try (ChatClient client = new ChatClient(Site.STACKOVERFLOW, httpClient, ws)) {
+		try (var client = new ChatClient(Site.STACKOVERFLOW, httpClient, ws)) {
 			client.joinRoom(1);
 		}
 	}
@@ -106,13 +106,13 @@ public class ChatClientTest {
 	@Test
 	public void getRoom_has_not_been_joined() throws Exception {
 		//@formatter:off
-		CloseableHttpClient httpClient = new MockHttpClientBuilder()
+		var httpClient = new MockHttpClientBuilder()
 		.build();
 		//@formatter:on
 
 		WebSocketContainer ws = mock(WebSocketContainer.class);
 
-		try (ChatClient client = new ChatClient(Site.STACKOVERFLOW, httpClient, ws)) {
+		try (var client = new ChatClient(Site.STACKOVERFLOW, httpClient, ws)) {
 			assertNull(client.getRoom(1));
 		}
 
@@ -122,16 +122,16 @@ public class ChatClientTest {
 	@Test
 	public void joinRoom_not_found() throws Exception {
 		//@formatter:off
-		CloseableHttpClient httpClient = new MockHttpClientBuilder()
+		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
 			.requestGet("https://chat.stackoverflow.com/rooms/1")
 			.response(404, ResponseSamples.roomNotFound())
 		.build();
 		//@formatter:on
 
-		WebSocketContainer ws = mock(WebSocketContainer.class);
+		var ws = mock(WebSocketContainer.class);
 
-		try (ChatClient client = new ChatClient(Site.STACKOVERFLOW, httpClient, ws)) {
+		try (var client = new ChatClient(Site.STACKOVERFLOW, httpClient, ws)) {
 			client.login("email", "password");
 			client.joinRoom(1);
 			fail();
@@ -144,16 +144,16 @@ public class ChatClientTest {
 	@Test
 	public void joinRoom_private() throws Exception {
 		//@formatter:off
-		CloseableHttpClient httpClient = new MockHttpClientBuilder()
+		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
 			.requestGet("https://chat.stackoverflow.com/rooms/1")
 			.responseOk(ResponseSamples.privateRoom(1))
 		.build();
 		//@formatter:on
 
-		WebSocketContainer ws = mock(WebSocketContainer.class);
+		var ws = mock(WebSocketContainer.class);
 
-		try (ChatClient client = new ChatClient(Site.STACKOVERFLOW, httpClient, ws)) {
+		try (var client = new ChatClient(Site.STACKOVERFLOW, httpClient, ws)) {
 			client.login("email", "password");
 			client.joinRoom(1);
 			fail();
@@ -166,16 +166,16 @@ public class ChatClientTest {
 	@Test
 	public void joinRoom_no_fkey() throws Exception {
 		//@formatter:off
-		CloseableHttpClient httpClient = new MockHttpClientBuilder()
+		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
 			.requestGet("https://chat.stackoverflow.com/rooms/1")
 			.responseOk("garbage data")
 		.build();
 		//@formatter:on
 
-		WebSocketContainer ws = mock(WebSocketContainer.class);
+		var ws = mock(WebSocketContainer.class);
 
-		try (ChatClient client = new ChatClient(Site.STACKOVERFLOW, httpClient, ws)) {
+		try (var client = new ChatClient(Site.STACKOVERFLOW, httpClient, ws)) {
 			client.login("email", "password");
 			client.joinRoom(1);
 			fail();
@@ -188,7 +188,7 @@ public class ChatClientTest {
 	@Test
 	public void joinRoom() throws Exception {
 		//@formatter:off
-		CloseableHttpClient httpClient = new MockHttpClientBuilder()
+		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
 			
 			.requestGet("https://chat.stackoverflow.com/rooms/1")
@@ -217,8 +217,8 @@ public class ChatClientTest {
 		.build();
 		//@formatter:on
 
-		WebSocketContainer ws = mock(WebSocketContainer.class);
-		Session session = mock(Session.class);
+		var ws = mock(WebSocketContainer.class);
+		var session = mock(Session.class);
 
 		//@formatter:off
 		when(ws.connectToServer(
@@ -228,17 +228,17 @@ public class ChatClientTest {
 		)).thenReturn(session);
 		//@formatter:on
 
-		try (ChatClient client = new ChatClient(Site.STACKOVERFLOW, httpClient, ws)) {
+		try (var client = new ChatClient(Site.STACKOVERFLOW, httpClient, ws)) {
 			client.login("email", "password");
 
-			Room room = client.joinRoom(1);
+			var room = client.joinRoom(1);
 			assertEquals(1, room.getRoomId());
 			assertEquals("0123456789abcdef0123456789abcdef", room.getFkey());
 			assertTrue(room.canPost());
 
 			assertSame(room, client.getRoom(1));
 			assertTrue(client.isInRoom(1));
-			assertEquals(Arrays.asList(room), client.getRooms());
+			assertEquals(List.of(room), client.getRooms());
 
 			/*
 			 * If the room is joined again, it should just return the Room
@@ -254,7 +254,7 @@ public class ChatClientTest {
 	@Test
 	public void joinRoom_cannot_post() throws Exception {
 		//@formatter:off
-		CloseableHttpClient httpClient = new MockHttpClientBuilder()
+		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
 			
 			.requestGet("https://chat.stackoverflow.com/rooms/1")
@@ -283,8 +283,8 @@ public class ChatClientTest {
 		.build();
 		//@formatter:on
 
-		WebSocketContainer ws = mock(WebSocketContainer.class);
-		Session session = mock(Session.class);
+		var ws = mock(WebSocketContainer.class);
+		var session = mock(Session.class);
 
 		//@formatter:off
 		when(ws.connectToServer(
@@ -294,10 +294,10 @@ public class ChatClientTest {
 		)).thenReturn(session);
 		//@formatter:on
 
-		try (ChatClient client = new ChatClient(Site.STACKOVERFLOW, httpClient, ws)) {
+		try (var client = new ChatClient(Site.STACKOVERFLOW, httpClient, ws)) {
 			client.login("email", "password");
 
-			Room room = client.joinRoom(1);
+			var room = client.joinRoom(1);
 			assertFalse(room.canPost());
 
 			try {
@@ -314,7 +314,7 @@ public class ChatClientTest {
 	@Test
 	public void joinRoom_that_has_no_messages() throws Exception {
 		//@formatter:off
-		CloseableHttpClient httpClient = new MockHttpClientBuilder()
+		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
 				
 			.requestGet("https://chat.stackoverflow.com/rooms/1")
@@ -343,8 +343,8 @@ public class ChatClientTest {
 		.build();
 		//@formatter:on
 
-		WebSocketContainer ws = mock(WebSocketContainer.class);
-		Session session = mock(Session.class);
+		var ws = mock(WebSocketContainer.class);
+		var session = mock(Session.class);
 
 		//@formatter:off
 		when(ws.connectToServer(
@@ -354,7 +354,7 @@ public class ChatClientTest {
 		)).thenReturn(session);
 		//@formatter:on
 
-		try (ChatClient client = new ChatClient(Site.STACKOVERFLOW, httpClient, ws)) {
+		try (var client = new ChatClient(Site.STACKOVERFLOW, httpClient, ws)) {
 			client.login("email", "password");
 			client.joinRoom(1);
 		}
@@ -367,7 +367,7 @@ public class ChatClientTest {
 	@SuppressWarnings("resource")
 	public void getMessageContent() throws Exception {
 		//@formatter:off
-		CloseableHttpClient httpClient = new MockHttpClientBuilder()	
+		var httpClient = new MockHttpClientBuilder()	
 			//login not required
 
 			.requestGet("https://chat.stackoverflow.com/message/1234?plain=false")
@@ -375,12 +375,12 @@ public class ChatClientTest {
 		.build();
 		//@formatter:on
 
-		WebSocketContainer ws = mock(WebSocketContainer.class);
+		var ws = mock(WebSocketContainer.class);
 
-		ChatClient client = new ChatClient(Site.STACKOVERFLOW, httpClient, ws);
+		var client = new ChatClient(Site.STACKOVERFLOW, httpClient, ws);
 
-		String expected = "Message";
-		String actual = client.getMessageContent(1234);
+		var expected = "Message";
+		var actual = client.getMessageContent(1234);
 		assertEquals(expected, actual);
 	}
 
@@ -388,7 +388,7 @@ public class ChatClientTest {
 	@SuppressWarnings("resource")
 	public void getOriginalMessageContent() throws Exception {
 		//@formatter:off
-		CloseableHttpClient httpClient = new MockHttpClientBuilder()	
+		var httpClient = new MockHttpClientBuilder()	
 			//login not required
 
 			.requestGet("https://chat.stackoverflow.com/message/1234?plain=true")
@@ -396,12 +396,12 @@ public class ChatClientTest {
 		.build();
 		//@formatter:on
 
-		WebSocketContainer ws = mock(WebSocketContainer.class);
+		var ws = mock(WebSocketContainer.class);
 
-		ChatClient client = new ChatClient(Site.STACKOVERFLOW, httpClient, ws);
+		var client = new ChatClient(Site.STACKOVERFLOW, httpClient, ws);
 
-		String expected = "Message";
-		String actual = client.getOriginalMessageContent(1234);
+		var expected = "Message";
+		var actual = client.getOriginalMessageContent(1234);
 		assertEquals(expected, actual);
 	}
 
@@ -409,7 +409,7 @@ public class ChatClientTest {
 	@SuppressWarnings("resource")
 	public void getOriginalMessageContent_bad_response() throws Exception {
 		//@formatter:off
-		CloseableHttpClient httpClient = new MockHttpClientBuilder()	
+		var httpClient = new MockHttpClientBuilder()	
 			//login not required
 
 			.requestGet("https://chat.stackoverflow.com/message/1234?plain=true")
@@ -417,9 +417,9 @@ public class ChatClientTest {
 		.build();
 		//@formatter:on
 
-		WebSocketContainer ws = mock(WebSocketContainer.class);
+		var ws = mock(WebSocketContainer.class);
 
-		ChatClient client = new ChatClient(Site.STACKOVERFLOW, httpClient, ws);
+		var client = new ChatClient(Site.STACKOVERFLOW, httpClient, ws);
 
 		try {
 			client.getOriginalMessageContent(1234);
@@ -431,7 +431,7 @@ public class ChatClientTest {
 	@Test
 	public void leave_room() throws Exception {
 		//@formatter:off
-		CloseableHttpClient httpClient = new MockHttpClientBuilder()
+		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
 				
 			.requestGet("https://chat.stackoverflow.com/rooms/1")
@@ -460,8 +460,8 @@ public class ChatClientTest {
 		.build();
 		//@formatter:on
 
-		WebSocketContainer ws = mock(WebSocketContainer.class);
-		Session session = mock(Session.class);
+		var ws = mock(WebSocketContainer.class);
+		var session = mock(Session.class);
 
 		//@formatter:off
 		when(ws.connectToServer(
@@ -471,7 +471,7 @@ public class ChatClientTest {
 		)).thenReturn(session);
 		//@formatter:on
 
-		try (ChatClient client = new ChatClient(Site.STACKOVERFLOW, httpClient, ws)) {
+		try (var client = new ChatClient(Site.STACKOVERFLOW, httpClient, ws)) {
 			client.login("email", "password");
 
 			Room room = client.joinRoom(1);
@@ -480,12 +480,12 @@ public class ChatClientTest {
 
 			assertSame(room, client.getRoom(1));
 			assertTrue(client.isInRoom(1));
-			assertEquals(Arrays.asList(room), client.getRooms());
+			assertEquals(List.of(room), client.getRooms());
 
 			room.leave();
 			assertNull(client.getRoom(1));
 			assertFalse(client.isInRoom(1));
-			assertEquals(Arrays.asList(), client.getRooms());
+			assertEquals(List.of(), client.getRooms());
 		}
 
 		verify(session).close();
@@ -504,8 +504,8 @@ public class ChatClientTest {
 	 * @return the value that will be put in the web socket URL
 	 */
 	private static long webSocketTimestamp(long messageTs) {
-		Instant instant = Instant.ofEpochSecond(messageTs);
-		LocalDateTime dt = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
+		var instant = Instant.ofEpochSecond(messageTs);
+		var dt = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
 		return dt.toEpochSecond(ZoneOffset.UTC);
 	}
 }

@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -32,7 +31,7 @@ class WebSocketEventParsers {
 	 * @return the parsed event
 	 */
 	public static MessagePostedEvent messagePosted(JsonNode element) {
-		MessagePostedEvent.Builder builder = new MessagePostedEvent.Builder();
+		var builder = new MessagePostedEvent.Builder();
 
 		extractCommonEventFields(element, builder);
 		builder.message(extractChatMessage(element));
@@ -46,7 +45,7 @@ class WebSocketEventParsers {
 	 * @return the parsed event
 	 */
 	public static MessageEditedEvent messageEdited(JsonNode element) {
-		MessageEditedEvent.Builder builder = new MessageEditedEvent.Builder();
+		var builder = new MessageEditedEvent.Builder();
 
 		extractCommonEventFields(element, builder);
 		builder.message(extractChatMessage(element));
@@ -60,7 +59,7 @@ class WebSocketEventParsers {
 	 * @return the parsed event
 	 */
 	public static MessageDeletedEvent messageDeleted(JsonNode element) {
-		MessageDeletedEvent.Builder builder = new MessageDeletedEvent.Builder();
+		var builder = new MessageDeletedEvent.Builder();
 
 		extractCommonEventFields(element, builder);
 		builder.message(extractChatMessage(element));
@@ -74,7 +73,7 @@ class WebSocketEventParsers {
 	 * @return the parsed event
 	 */
 	public static MessageStarredEvent messageStarred(JsonNode element) {
-		MessageStarredEvent.Builder builder = new MessageStarredEvent.Builder();
+		var builder = new MessageStarredEvent.Builder();
 
 		extractCommonEventFields(element, builder);
 		builder.message(extractChatMessage(element));
@@ -88,11 +87,11 @@ class WebSocketEventParsers {
 	 * @return the parsed event
 	 */
 	public static UserEnteredEvent userEntered(JsonNode element) {
-		UserEnteredEvent.Builder builder = new UserEnteredEvent.Builder();
+		var builder = new UserEnteredEvent.Builder();
 
 		extractCommonEventFields(element, builder);
 
-		JsonNode value = element.get("room_id");
+		var value = element.get("room_id");
 		if (value != null) {
 			builder.roomId(value.asInt());
 		}
@@ -121,11 +120,11 @@ class WebSocketEventParsers {
 	 * @return the parsed event
 	 */
 	public static UserLeftEvent userLeft(JsonNode element) {
-		UserLeftEvent.Builder builder = new UserLeftEvent.Builder();
+		var builder = new UserLeftEvent.Builder();
 
 		extractCommonEventFields(element, builder);
 
-		JsonNode value = element.get("room_id");
+		var value = element.get("room_id");
 		if (value != null) {
 			builder.roomId(value.asInt());
 		}
@@ -154,11 +153,11 @@ class WebSocketEventParsers {
 	 * @return the parsed event
 	 */
 	public static InvitationEvent invitation(JsonNode element) {
-		InvitationEvent.Builder builder = new InvitationEvent.Builder();
+		var builder = new InvitationEvent.Builder();
 
 		extractCommonEventFields(element, builder);
 
-		JsonNode value = element.get("room_id");
+		var value = element.get("room_id");
 		if (value != null) {
 			builder.roomId(value.asInt());
 		}
@@ -199,19 +198,18 @@ class WebSocketEventParsers {
 	 * not contain any "message moved" events
 	 */
 	public static MessagesMovedEvent messagesMovedOut(Map<WebSocketEventType, List<JsonNode>> eventsByType) {
-		Collection<JsonNode> moveEvents = eventsByType.remove(WebSocketEventType.MESSAGE_MOVED_OUT);
+		var moveEvents = eventsByType.remove(WebSocketEventType.MESSAGE_MOVED_OUT);
 		if (moveEvents.isEmpty()) {
 			return null;
 		}
 
-		MessagesMovedEvent.Builder builder = new MessagesMovedEvent.Builder();
+		var builder = new MessagesMovedEvent.Builder();
 
-		List<ChatMessage> messages = new ArrayList<>(moveEvents.size());
-		for (JsonNode event : moveEvents) {
-			ChatMessage message = extractChatMessage(event);
-			messages.add(message);
-		}
-		builder.messages(messages);
+		//@formatter:off
+		builder.messages(moveEvents.stream()
+			.map(WebSocketEventParsers::extractChatMessage)
+		.toList());
+		//@formatter:on
 
 		/*
 		 * When messages are moved, the chat system posts a new message
@@ -220,13 +218,14 @@ class WebSocketEventParsers {
 		 * contains the ID and name of the room that the messages were moved
 		 * to.
 		 */
-		Collection<JsonNode> messagePostedEvents = eventsByType.get(WebSocketEventType.MESSAGE_POSTED);
-		JsonNode matchingEvent = null;
-		for (JsonNode event : messagePostedEvents) {
-			MessagePostedEvent messagePostedEvent = WebSocketEventParsers.messagePosted(event);
-			ChatMessage message = messagePostedEvent.getMessage();
+		var messagePostedEvents = eventsByType.get(WebSocketEventType.MESSAGE_POSTED);
 
-			Matcher m = messagesMovedOutRegex.matcher(message.getContent().getContent());
+		JsonNode matchingEvent = null;
+		for (var event : messagePostedEvents) {
+			var messagePostedEvent = WebSocketEventParsers.messagePosted(event);
+			var message = messagePostedEvent.getMessage();
+
+			var m = messagesMovedOutRegex.matcher(message.getContent().getContent());
 			if (!m.find()) {
 				continue;
 			}
@@ -279,19 +278,16 @@ class WebSocketEventParsers {
 	 * not contain any "message moved" events
 	 */
 	public static MessagesMovedEvent messagesMovedIn(Map<WebSocketEventType, List<JsonNode>> eventsByType) {
-		Collection<JsonNode> moveEvents = eventsByType.remove(WebSocketEventType.MESSAGE_MOVED_IN);
+		var moveEvents = eventsByType.remove(WebSocketEventType.MESSAGE_MOVED_IN);
 		if (moveEvents.isEmpty()) {
 			return null;
 		}
 
-		MessagesMovedEvent.Builder builder = new MessagesMovedEvent.Builder();
-
-		List<ChatMessage> messages = new ArrayList<>(moveEvents.size());
-		for (JsonNode event : moveEvents) {
-			ChatMessage message = extractChatMessage(event);
-			messages.add(message);
-		}
-		builder.messages(messages);
+		var builder = new MessagesMovedEvent.Builder();
+		
+		builder.messages(moveEvents.stream()
+			.map(WebSocketEventParsers::extractChatMessage)
+		.toList());
 
 		/*
 		 * When messages are moved, the chat system posts a new message
@@ -300,13 +296,13 @@ class WebSocketEventParsers {
 		 * contains the ID and name of the room that the messages were moved
 		 * from.
 		 */
-		Collection<JsonNode> messagePostedEvents = eventsByType.get(WebSocketEventType.MESSAGE_POSTED);
+		var messagePostedEvents = eventsByType.get(WebSocketEventType.MESSAGE_POSTED);
 		JsonNode matchingEvent = null;
-		for (JsonNode event : messagePostedEvents) {
-			MessagePostedEvent messagePostedEvent = WebSocketEventParsers.messagePosted(event);
-			ChatMessage message = messagePostedEvent.getMessage();
+		for (var event : messagePostedEvents) {
+			var messagePostedEvent = WebSocketEventParsers.messagePosted(event);
+			var message = messagePostedEvent.getMessage();
 
-			Matcher m = messagesMovedInRegex.matcher(message.getContent().getContent());
+			var m = messagesMovedInRegex.matcher(message.getContent().getContent());
 			if (!m.find()) {
 				continue;
 			}
@@ -351,16 +347,16 @@ class WebSocketEventParsers {
 	 * {@link MessagePostedEvent} and {@link MessageEditedEvent} objects.
 	 */
 	public static List<Event> reply(Map<WebSocketEventType, List<JsonNode>> eventsByType) {
-		List<Event> events = new ArrayList<>();
+		var events = new ArrayList<Event>();
 
-		Collection<JsonNode> newMessageEvents = eventsByType.get(WebSocketEventType.MESSAGE_POSTED);
-		Collection<JsonNode> editedMessageEvents = eventsByType.get(WebSocketEventType.MESSAGE_EDITED);
-		Collection<JsonNode> replyEvents = eventsByType.remove(WebSocketEventType.REPLY_POSTED);
+		var newMessageEvents = eventsByType.get(WebSocketEventType.MESSAGE_POSTED);
+		var editedMessageEvents = eventsByType.get(WebSocketEventType.MESSAGE_EDITED);
+		var replyEvents = eventsByType.remove(WebSocketEventType.REPLY_POSTED);
 
-		for (JsonNode replyEvent : replyEvents) {
-			ChatMessage message = extractChatMessage(replyEvent);
+		for (var replyEvent : replyEvents) {
+			var message = extractChatMessage(replyEvent);
 
-			JsonNode value = replyEvent.get("id");
+			var value = replyEvent.get("id");
 			long eventId = (value == null) ? 0 : value.asLong();
 
 			/*
@@ -372,7 +368,7 @@ class WebSocketEventParsers {
 			 * event to fire on our end.
 			 */
 
-			JsonNode event = findMessageWithId(newMessageEvents, message.getMessageId());
+			var event = findMessageWithId(newMessageEvents, message.getMessageId());
 			if (event != null) {
 				newMessageEvents.remove(event);
 
@@ -425,17 +421,17 @@ class WebSocketEventParsers {
 	 * {@link MessagePostedEvent} and {@link MessageEditedEvent} objects.
 	 */
 	public static List<Event> mention(Map<WebSocketEventType, List<JsonNode>> eventsByType) {
-		List<Event> events = new ArrayList<>();
+		var events = new ArrayList<Event>();
 
-		Collection<JsonNode> newMessageEvents = eventsByType.get(WebSocketEventType.MESSAGE_POSTED);
-		Collection<JsonNode> editedMessageEvents = eventsByType.get(WebSocketEventType.MESSAGE_EDITED);
-		Collection<JsonNode> mentionEvents = eventsByType.remove(WebSocketEventType.USER_MENTIONED);
+		var newMessageEvents = eventsByType.get(WebSocketEventType.MESSAGE_POSTED);
+		var editedMessageEvents = eventsByType.get(WebSocketEventType.MESSAGE_EDITED);
+		var mentionEvents = eventsByType.remove(WebSocketEventType.USER_MENTIONED);
 
-		for (JsonNode mentionEvent : mentionEvents) {
-			ChatMessage message = extractChatMessage(mentionEvent);
+		for (var mentionEvent : mentionEvents) {
+			var message = extractChatMessage(mentionEvent);
 
-			JsonNode value = mentionEvent.get("id");
-			long eventId = (value == null) ? 0 : value.asLong();
+			var value = mentionEvent.get("id");
+			var eventId = (value == null) ? 0 : value.asLong();
 
 			/*
 			 * Whenever a "user mentioned" event is posted, an accompanying
@@ -446,7 +442,7 @@ class WebSocketEventParsers {
 			 * event to fire on our end.
 			 */
 
-			JsonNode event = findMessageWithId(newMessageEvents, message.getMessageId());
+			var event = findMessageWithId(newMessageEvents, message.getMessageId());
 			if (event != null) {
 				newMessageEvents.remove(event);
 
@@ -479,21 +475,18 @@ class WebSocketEventParsers {
 	}
 
 	private static JsonNode findMessageWithId(Collection<JsonNode> events, long id) {
-		for (JsonNode event : events) {
-			JsonNode value = event.get("message_id");
-			if (value == null) {
-				continue;
-			}
-
-			if (id == value.asLong()) {
-				return event;
-			}
-		}
-		return null;
+		//@formatter:off
+		return events.stream()
+			.filter(event -> {
+				JsonNode value = event.get("message_id");
+				return (value != null) && (value.asLong() == id);
+			})
+		.findFirst().orElse(null);
+		//@formatter:on
 	}
 
 	private static void extractCommonEventFields(JsonNode element, Event.Builder<?, ?> builder) {
-		JsonNode value = element.get("id");
+		var value = element.get("id");
 		if (value != null) {
 			builder.eventId(value.asLong());
 		}
@@ -510,9 +503,9 @@ class WebSocketEventParsers {
 	 * @return the parsed chat message
 	 */
 	public static ChatMessage extractChatMessage(JsonNode element) {
-		ChatMessage.Builder builder = new ChatMessage.Builder();
+		var builder = new ChatMessage.Builder();
 
-		JsonNode value = element.get("message_id");
+		var value = element.get("message_id");
 		if (value != null) {
 			builder.messageId(value.asLong());
 		}
@@ -600,7 +593,7 @@ class WebSocketEventParsers {
 	 * @return the {@link LocalDateTime} instance
 	 */
 	public static LocalDateTime timestamp(long ts) {
-		Instant instant = Instant.ofEpochSecond(ts);
+		var instant = Instant.ofEpochSecond(ts);
 		return LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
 	}
 

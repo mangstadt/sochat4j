@@ -77,7 +77,7 @@ public class Gobble {
 	 * @throws IOException if there was a problem reading from the stream
 	 */
 	public String asString(Charset charset) throws IOException {
-		Reader reader = buildReader(charset);
+		var reader = buildReader(charset);
 		return consumeReader(reader);
 	}
 
@@ -93,7 +93,7 @@ public class Gobble {
 			throw new IllegalStateException("Cannot get raw bytes from a Reader object.");
 		}
 
-		InputStream in = buildInputStream();
+		var in = buildInputStream();
 		return consumeInputStream(in);
 	}
 
@@ -112,8 +112,8 @@ public class Gobble {
 	}
 
 	private String consumeReader(Reader reader) throws IOException {
-		StringBuilder sb = new StringBuilder();
-		char[] buffer = new char[4096];
+		var sb = new StringBuilder();
+		var buffer = new char[4096];
 		int read;
 		try {
 			while ((read = reader.read(buffer)) != -1) {
@@ -126,8 +126,8 @@ public class Gobble {
 	}
 
 	private byte[] consumeInputStream(InputStream in) throws IOException {
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		byte[] buffer = new byte[4096];
+		var out = new ByteArrayOutputStream();
+		var buffer = new byte[4096];
 		int read;
 		try {
 			while ((read = in.read(buffer)) != -1) {

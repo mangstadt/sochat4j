@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -48,11 +47,11 @@ public class Content {
 	 * @return the parsed content
 	 */
 	public static Content parse(String rawContent) {
-		String sanitizedContent = extractFixedWidthFontContent(rawContent);
-		boolean fixedWidthFont = (sanitizedContent != null);
+		var sanitizedContent = extractFixedWidthFontContent(rawContent);
+		var fixedWidthFont = (sanitizedContent != null);
 		if (!fixedWidthFont) {
 			sanitizedContent = extractMultiLineContent(rawContent);
-			boolean multiLine = (sanitizedContent != null);
+			var multiLine = (sanitizedContent != null);
 			if (!multiLine) {
 				sanitizedContent = rawContent;
 			}
@@ -157,12 +156,12 @@ public class Content {
 	 * not included in the returned output.
 	 */
 	public List<String> getMentions() {
-		final int minLength = 3;
-		List<String> mentions = new ArrayList<>(1);
+		final var minLength = 3;
+		var mentions = new ArrayList<String>(1);
 
-		boolean inMention = false;
-		StringBuilder buffer = new StringBuilder();
-		for (int i = 0; i < sanitizedContent.length(); i++) {
+		var inMention = false;
+		var buffer = new StringBuilder();
+		for (var i = 0; i < sanitizedContent.length(); i++) {
 			char c = sanitizedContent.charAt(i);
 
 			if (inMention) {
@@ -199,7 +198,7 @@ public class Content {
 	 * @return true if the user is mentioned, false if not
 	 */
 	public boolean isMentioned(String username) {
-		List<String> mentions = getMentions();
+		var mentions = getMentions();
 		if (mentions.isEmpty()) {
 			return false;
 		}
@@ -228,7 +227,7 @@ public class Content {
 		if (this == obj) return true;
 		if (obj == null) return false;
 		if (getClass() != obj.getClass()) return false;
-		Content other = (Content) obj;
+		var other = (Content) obj;
 		return Objects.equals(sanitizedContent, other.sanitizedContent) && fixedWidthFont == other.fixedWidthFont && Objects.equals(rawContent, other.rawContent);
 	}
 
@@ -246,7 +245,7 @@ public class Content {
 	 * fixed-width font
 	 */
 	private static String extractFixedWidthFontContent(String rawContent) {
-		Matcher m = fixedWidthRegex.matcher(rawContent);
+		var m = fixedWidthRegex.matcher(rawContent);
 		return m.find() ? m.group(2) : null;
 	}
 
@@ -264,11 +263,7 @@ public class Content {
 	 * multi-line
 	 */
 	private static String extractMultiLineContent(String rawContent) {
-		Matcher m = multiLineRegex.matcher(rawContent);
-		if (!m.find()) {
-			return null;
-		}
-
-		return m.group(2).replace(" <br> ", "\n");
+		var m = multiLineRegex.matcher(rawContent);
+		return m.find() ? m.group(2).replace(" <br> ", "\n") : null;
 	}
 }

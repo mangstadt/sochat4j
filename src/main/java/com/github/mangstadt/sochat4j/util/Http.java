@@ -2,19 +2,14 @@ package com.github.mangstadt.sochat4j.util;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
+import java.util.stream.IntStream;
 
 import org.apache.http.Consts;
-import org.apache.http.HttpEntity;
-import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpPost;
@@ -108,15 +103,18 @@ public class Http implements Closeable {
 			throw new IllegalArgumentException("\"parameters\" vararg must have an even number of values.");
 		}
 
-		HttpPost request = new HttpPost(uri);
+		var request = new HttpPost(uri);
 
 		if (parameters.length > 0) {
-			List<NameValuePair> params = new ArrayList<>(parameters.length / 2);
-			for (int i = 0; i < parameters.length; i += 2) {
-				String name = parameters[i].toString();
-				String value = Objects.toString(parameters[i + 1]);
-				params.add(new BasicNameValuePair(name, value));
-			}
+			//@formatter:off
+			var params = IntStream.iterate(0, i -> i < parameters.length, i -> i + 2)
+				.mapToObj(i -> {
+					String name = parameters[i].toString();
+					String value = Objects.toString(parameters[i + 1]);
+					return new BasicNameValuePair(name, value);
+				})
+			.toList();
+			//@formatter:on
 			request.setEntity(new UrlEncodedFormEntity(params, Consts.UTF_8));
 		}
 
@@ -132,10 +130,10 @@ public class Http implements Closeable {
 	 * @throws IOException if there was a problem sending the request
 	 */
 	private Response send(HttpUriRequest request) throws IOException {
-		try (CloseableHttpResponse response = client.execute(request)) {
-			int statusCode = response.getStatusLine().getStatusCode();
+		try (var response = client.execute(request)) {
+			var statusCode = response.getStatusLine().getStatusCode();
 
-			HttpEntity entity = response.getEntity();
+			var entity = response.getEntity();
 			ContentType contentType;
 			byte[] body;
 			if (entity == null) {
@@ -162,10 +160,10 @@ public class Http implements Closeable {
 			return send(request);
 		}
 
-		int attempts = 0;
+		var attempts = 0;
 		while (true) {
 			attempts++;
-			Response response = send(request);
+			var response = send(request);
 			if (!rateLimitHandler.isRateLimited(response)) {
 				return response;
 			}
@@ -174,7 +172,7 @@ public class Http implements Closeable {
 				break;
 			}
 
-			Duration sleep = rateLimitHandler.getWaitTime(response);
+			var sleep = rateLimitHandler.getWaitTime(response);
 			logger.info(() -> "Sleeping for " + sleep.toMillis() + "ms before resending the request...");
 			Sleeper.sleep(sleep);
 		}
@@ -238,7 +236,7 @@ public class Http implements Closeable {
 			}
 
 			if (bodyStr == null) {
-				Charset charset = contentType.getCharset();
+				var charset = contentType.getCharset();
 				bodyStr = (charset == null) ? new String(body) : new String(body, charset);
 			}
 
@@ -253,7 +251,7 @@ public class Http implements Closeable {
 		 * JSON
 		 */
 		public JsonNode getBodyAsJson() throws JsonProcessingException {
-			String bodyStr = getBody();
+			var bodyStr = getBody();
 			return (bodyStr == null) ? null : JsonUtils.parse(bodyStr);
 		}
 
@@ -267,7 +265,7 @@ public class Http implements Closeable {
 		 * JSON
 		 */
 		public <T> T getBodyAsJson(Class<T> clazz) throws JsonProcessingException {
-			String bodyStr = getBody();
+			var bodyStr = getBody();
 			return (bodyStr == null) ? null : JsonUtils.parse(bodyStr, clazz);
 		}
 
@@ -277,7 +275,7 @@ public class Http implements Closeable {
 		 * (e.g. HEAD requests)
 		 */
 		public Document getBodyAsHtml() {
-			String bodyStr = getBody();
+			var bodyStr = getBody();
 			return (bodyStr == null) ? null : Jsoup.parse(bodyStr, requestUri);
 		}
 

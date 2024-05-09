@@ -4,7 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.util.Arrays;
+import java.util.List;
 
 import org.junit.Test;
 
@@ -25,8 +25,8 @@ public class ContentTest {
 	}
 
 	private static void assertMention(String message, String... expectedMentions) {
-		Content content = new Content(message, false);
-		assertEquals(Arrays.asList(expectedMentions), content.getMentions());
+		var content = new Content(message, false);
+		assertEquals(List.of(expectedMentions), content.getMentions());
 	}
 
 	@Test
@@ -37,15 +37,13 @@ public class ContentTest {
 	}
 
 	private static void assertIsMentioned(String message, String username, boolean expected) {
-		Content content = new Content(message, false);
+		var content = new Content(message, false);
 		assertEquals(expected, content.isMentioned(username));
 	}
 
 	@Test
 	public void isOnebox() {
-		Content content;
-
-		content = new Content("<div class=\"foooneboxbar\">onebox</div>", false);
+		var content = new Content("<div class=\"foooneboxbar\">onebox</div>", false);
 		assertTrue(content.isOnebox());
 
 		content = new Content("foobar", false);
@@ -54,9 +52,7 @@ public class ContentTest {
 
 	@Test
 	public void parse() {
-		Content content;
-
-		content = Content.parse("one\ntwo");
+		var content = Content.parse("one\ntwo");
 		assertFalse(content.isFixedWidthFont());
 		assertEquals("one\ntwo", content.getContent());
 		assertEquals("one\ntwo", content.getRawContent());

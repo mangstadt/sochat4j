@@ -4,13 +4,10 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.EnumMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -19,10 +16,8 @@ import java.util.TimerTask;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import org.apache.http.client.utils.URIBuilder;
 import org.jsoup.Jsoup;
@@ -114,13 +109,13 @@ public class Room implements IRoom {
 		websocketReconnectTimer = new Timer(true);
 
 		//@formatter:off
-		String url = baseUri()
+		var url = baseUri()
 			.setPathSegments("rooms", Integer.toString(roomId))
 		.toString();
 		//@formatter:on
 
-		Http.Response response = http.get(url);
-		Document dom = response.getBodyAsHtml();
+		var response = http.get(url);
+		var dom = response.getBodyAsHtml();
 
 		if (roomDoesNotExist(response)) {
 			throw new RoomNotFoundException(roomId);
@@ -163,15 +158,15 @@ public class Room implements IRoom {
 	}
 
 	private void connectToWebSocket() throws IOException {
-		URI wsUri = getWebSocketUrl();
+		var wsUri = getWebSocketUrl();
 
 		//@formatter:off
-		ClientEndpointConfig config = ClientEndpointConfig.Builder.create()
+		var config = ClientEndpointConfig.Builder.create()
 			.configurator(new Configurator() {
 				@Override
 				public void beforeRequest(Map<String, List<String>> headers) {
-					String origin = baseUri().toString();
-					headers.put("Origin", Arrays.asList(origin));
+					var origin = baseUri().toString();
+					headers.put("Origin", List.of(origin));
 				}
 			})
 		.build();
@@ -205,7 +200,7 @@ public class Room implements IRoom {
 	 * will stop responding to messages.
 	 */
 	private void createWebSocketRefreshTimer() {
-		long period = WEBSOCKET_REFRESH_FREQUENCY.toMillis();
+		var period = WEBSOCKET_REFRESH_FREQUENCY.toMillis();
 		websocketReconnectTimer.schedule(new TimerTask() {
 			@Override
 			public void run() {
@@ -218,8 +213,8 @@ public class Room implements IRoom {
 						logger.log(Level.SEVERE, e, () -> "[room=" + roomId + "]: Problem closing existing websocket session.");
 					}
 
-					boolean connected = false;
-					int attempts = 0;
+					var connected = false;
+					var attempts = 0;
 					while (!connected && attempts < MAX_WEBSOCKET_REFRESH_ATTEMPTS) {
 						try {
 							attempts++;
@@ -257,26 +252,26 @@ public class Room implements IRoom {
 
 	private URI getWebSocketUrl() throws IOException {
 		//@formatter:off
-		String url = baseUri()
+		var url = baseUri()
 			.setPath("/ws-auth")
 		.toString();
 		
-		Response response = http.post(url,
+		var response = http.post(url,
 			"roomid", roomId,
 			"fkey", fkey
 		);
 		//@formatter:on
 
-		JsonNode wsUrlNode = response.getBodyAsJson().get("url");
+		var wsUrlNode = response.getBodyAsJson().get("url");
 		if (wsUrlNode == null) {
 			throw new IOException("Web socket URL missing from response.");
 		}
 
-		String wsUrl = wsUrlNode.asText();
+		var wsUrl = wsUrlNode.asText();
 
-		List<ChatMessage> messages = getMessages(1);
-		ChatMessage latest = messages.isEmpty() ? null : messages.get(0);
-		long time = (latest == null) ? 0 : latest.getTimestamp().toEpochSecond(ZoneOffset.UTC);
+		var messages = getMessages(1);
+		var latest = messages.isEmpty() ? null : messages.get(0);
+		var time = (latest == null) ? 0 : latest.getTimestamp().toEpochSecond(ZoneOffset.UTC);
 
 		try {
 			//@formatter:off
@@ -304,29 +299,29 @@ public class Room implements IRoom {
 
 		logger.fine(() -> "[room " + roomId + "]: Received message:\n" + JsonUtils.prettyPrint(node) + "\n");
 
-		JsonNode roomNode = node.get("r" + roomId);
+		var roomNode = node.get("r" + roomId);
 		if (roomNode == null) {
 			return;
 		}
 
-		JsonNode eventsNode = roomNode.get("e");
+		var eventsNode = roomNode.get("e");
 		if (eventsNode == null || !eventsNode.isArray()) {
 			return;
 		}
 
-		Map<WebSocketEventType, List<JsonNode>> eventsByType = groupEventsByType(eventsNode);
+		var eventsByType = groupEventsByType(eventsNode);
 
-		List<Event> eventsToPublish = new ArrayList<>();
+		var eventsToPublish = new ArrayList<Event>();
 
 		eventsToPublish.addAll(WebSocketEventParsers.reply(eventsByType));
 		eventsToPublish.addAll(WebSocketEventParsers.mention(eventsByType));
 
-		Event movedOut = WebSocketEventParsers.messagesMovedOut(eventsByType);
+		var movedOut = WebSocketEventParsers.messagesMovedOut(eventsByType);
 		if (movedOut != null) {
 			eventsToPublish.add(movedOut);
 		}
 
-		Event movedIn = WebSocketEventParsers.messagesMovedIn(eventsByType);
+		var movedIn = WebSocketEventParsers.messagesMovedIn(eventsByType);
 		if (movedIn != null) {
 			eventsToPublish.add(movedIn);
 		}
@@ -345,39 +340,33 @@ public class Room implements IRoom {
 		.forEach(eventsToPublish::add);
 		//@formatter:on
 
-		List<Consumer<Event>> genericListeners = listeners.get(Event.class);
+		var genericListeners = listeners.get(Event.class);
 		synchronized (genericListeners) {
-			for (Consumer<Event> listener : genericListeners) {
-				for (Event event : eventsToPublish) {
-					listener.accept(event);
-				}
-			}
+			genericListeners.forEach(listener -> eventsToPublish.forEach(listener::accept));
 		}
-
-		for (Event event : eventsToPublish) {
-			List<Consumer<Event>> eventListeners = listeners.get(event.getClass());
+		
+		eventsToPublish.forEach(event -> {
+			var eventListeners = listeners.get(event.getClass());
 			synchronized (eventListeners) {
-				for (Consumer<Event> listener : eventListeners) {
-					listener.accept(event);
-				}
+				eventListeners.forEach(listener -> listener.accept(event));
 			}
-		}
+		});
 	}
 
 	private Map<WebSocketEventType, List<JsonNode>> groupEventsByType(JsonNode eventsNode) {
-		Map<WebSocketEventType, List<JsonNode>> eventsByType = new EnumMap<>(WebSocketEventType.class);
-		for (WebSocketEventType type : WebSocketEventType.values()) {
-			eventsByType.put(type, new ArrayList<>());
-		}
+		//@formatter:off
+		Map<WebSocketEventType, List<JsonNode>> eventsByType = Arrays.stream(WebSocketEventType.values())
+		.collect(Collectors.toMap(type -> type, type -> new ArrayList<>()));
+		//@formatter:on
 
 		for (JsonNode eventNode : eventsNode) {
-			JsonNode eventTypeNode = eventNode.get("event_type");
+			var eventTypeNode = eventNode.get("event_type");
 			if (eventTypeNode == null || !eventTypeNode.canConvertToInt()) {
 				logger.warning(() -> "[room " + roomId + "]: Ignoring JSON object that does not have a valid \"event_type\" field:\n" + JsonUtils.prettyPrint(eventNode) + "\n");
 				continue;
 			}
 
-			WebSocketEventType eventType = WebSocketEventType.get(eventTypeNode.asInt());
+			var eventType = WebSocketEventType.get(eventTypeNode.asInt());
 			if (eventType == null) {
 				logger.warning(() -> "[room " + roomId + "]: Ignoring event with unknown \"event_type\":\n" + JsonUtils.prettyPrint(eventNode) + "\n");
 				continue;
@@ -390,34 +379,28 @@ public class Room implements IRoom {
 	}
 
 	private Event parseEvent(JsonNode node) {
-		int id = node.get("event_type").asInt();
-		WebSocketEventType eventType = WebSocketEventType.get(id);
+		var id = node.get("event_type").asInt();
+		var eventType = WebSocketEventType.get(id);
 
-		switch (eventType) {
-		case MESSAGE_POSTED:
-			return WebSocketEventParsers.messagePosted(node);
-		case MESSAGE_EDITED:
-			return WebSocketEventParsers.messageEdited(node);
-		case INVITATION:
-			return WebSocketEventParsers.invitation(node);
-		case USER_ENTERED:
-			return WebSocketEventParsers.userEntered(node);
-		case USER_LEFT:
-			return WebSocketEventParsers.userLeft(node);
-		case MESSAGE_STARRED:
-			return WebSocketEventParsers.messageStarred(node);
-		case MESSAGE_DELETED:
-			return WebSocketEventParsers.messageDeleted(node);
-		default:
+		return switch (eventType) {
+		case MESSAGE_POSTED -> WebSocketEventParsers.messagePosted(node);
+		case MESSAGE_EDITED -> WebSocketEventParsers.messageEdited(node);
+		case INVITATION -> WebSocketEventParsers.invitation(node);
+		case USER_ENTERED -> WebSocketEventParsers.userEntered(node);
+		case USER_LEFT -> WebSocketEventParsers.userLeft(node);
+		case MESSAGE_STARRED -> WebSocketEventParsers.messageStarred(node);
+		case MESSAGE_DELETED -> WebSocketEventParsers.messageDeleted(node);
+		default -> {
 			logger.warning(() -> "[room " + roomId + "]: Ignoring event with unknown \"event_type\":\n" + JsonUtils.prettyPrint(node) + "\n");
-			return null;
+			yield null;
 		}
+		};
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
 	public <T extends Event> void addEventListener(Class<T> clazz, Consumer<T> listener) {
-		List<Consumer<Event>> eventListeners = listeners.get(clazz);
+		var eventListeners = listeners.get(clazz);
 		synchronized (eventListeners) {
 			eventListeners.add((Consumer<Event>) listener);
 		}
@@ -442,21 +425,21 @@ public class Room implements IRoom {
 		List<String> parts;
 		if (message.contains("\n")) {
 			//messages with newlines have no length limit
-			parts = Arrays.asList(message);
+			parts = List.of(message);
 		} else {
 			parts = splitStrategy.split(message, MAX_MESSAGE_LENGTH);
 		}
 
 		//@formatter:off
-		String url = baseUri()
+		var url = baseUri()
 			.setPathSegments("chats", Integer.toString(roomId), "messages", "new")
 		.toString();
 		//@formatter:on
 
-		List<Long> messageIds = new ArrayList<>(parts.size());
+		var messageIds = new ArrayList<Long>(parts.size());
 		for (String part : parts) {
 			//@formatter:off
-			Response response = http.post(url, new RateLimit409Handler(),
+			var response = http.post(url, new RateLimit409Handler(),
 				"text", part,
 				"fkey", fkey
 			);
@@ -479,9 +462,9 @@ public class Room implements IRoom {
 				throw notFound(response, "post a message");
 			}
 
-			JsonNode body = response.getBodyAsJson();
-			JsonNode idNode = body.get("id");
-			long id = (idNode == null) ? 0 : idNode.asLong();
+			var body = response.getBodyAsJson();
+			var idNode = body.get("id");
+			var id = (idNode == null) ? 0 : idNode.asLong();
 			messageIds.add(id);
 		}
 
@@ -491,11 +474,11 @@ public class Room implements IRoom {
 	@Override
 	public List<ChatMessage> getMessages(int count) throws IOException {
 		//@formatter:off
-		String url = baseUri()
+		var url = baseUri()
 			.setPathSegments("chats", Integer.toString(roomId), "events")
 		.toString();
 
-		Response response = http.post(url,
+		var response = http.post(url,
 			"mode", "messages",
 			"msgCount", count,
 			"fkey", fkey
@@ -506,41 +489,38 @@ public class Room implements IRoom {
 			throw notFound(response, "get messages");
 		}
 
-		JsonNode body = response.getBodyAsJson();
-		JsonNode events = body.get("events");
+		var body = response.getBodyAsJson();
+		var events = body.get("events");
 
 		if (events == null || !events.isArray()) {
-			return new ArrayList<>(0);
+			return List.of();
 		}
 
-		List<ChatMessage> messages = new ArrayList<>(events.size());
-		Iterator<JsonNode> it = events.elements();
-		while (it.hasNext()) {
-			JsonNode element = it.next();
-			ChatMessage chatMessage = WebSocketEventParsers.extractChatMessage(element);
-			messages.add(chatMessage);
-		}
-		return messages;
+		//@formatter:off
+		return JsonUtils.streamArray(events)
+			.map(WebSocketEventParsers::extractChatMessage)
+		.toList();
+		//@formatter:on
 	}
 
 	@Override
 	public void deleteMessage(long messageId) throws IOException {
 		//@formatter:off
-		String url = baseUri()
+		var url = baseUri()
 			.setPathSegments("messages", Long.toString(messageId), "delete")
 		.toString();
 
-		Response response = http.post(url,
+		var response = http.post(url,
 			"fkey", fkey
 		);
 		//@formatter:on
 
-		int statusCode = response.getStatusCode();
+		var statusCode = response.getStatusCode();
 		if (statusCode == 302) {
 			throw new IOException("Message ID " + messageId + " was never assigned to a message.");
 		}
 
-		String body = response.getBody();
+		var body = response.getBody();
 		switch (body) {
 		case "\"ok\"":
 		case "\"This message has already been deleted.\"":
@@ -559,22 +539,22 @@ public class Room implements IRoom {
 	@Override
 	public void editMessage(long messageId, String updatedMessage) throws IOException {
 		//@formatter:off
-		String url = baseUri()
+		var url = baseUri()
 			.setPathSegments("messages", Long.toString(messageId))
 		.toString();
 
-		Response response = http.post(url, new RateLimit409Handler(),
+		var response = http.post(url, new RateLimit409Handler(),
 			"text", updatedMessage,
 			"fkey", fkey
 		);
 		//@formatter:on
 
-		int statusCode = response.getStatusCode();
+		var statusCode = response.getStatusCode();
 		if (statusCode == 302) {
 			throw new IOException("Message ID " + messageId + " was never assigned to a message.");
 		}
 
-		String body = response.getBody();
+		var body = response.getBody();
 		switch (body) {
 		case "\"ok\"":
 			//message successfully edited
@@ -594,38 +574,38 @@ public class Room implements IRoom {
 	@Override
 	public List<UserInfo> getUserInfo(List<Integer> userIds) throws IOException {
 		//@formatter:off
-		String url = baseUri()
+		var url = baseUri()
 			.setPath("/user/info")
 		.toString();
 
-		String idsCommaSeparated = userIds.stream()
+		var idsCommaSeparated = userIds.stream()
 			.map(Object::toString)
 		.collect(Collectors.joining(","));
 
-		Response response = http.post(url,
+		var response = http.post(url,
 			"ids", idsCommaSeparated,
 			"roomId", roomId
 		);
 		//@formatter:on
 
-		JsonNode usersNode = response.getBodyAsJson().get("users");
+		var usersNode = response.getBodyAsJson().get("users");
 		if (usersNode == null || !usersNode.isArray()) {
 			return List.of();
 		}
 
 		//@formatter:off
-		return StreamSupport.stream(usersNode.spliterator(), false)
+		return JsonUtils.streamArray(usersNode)
 			.map(this::parseUserInfo)
-		.collect(Collectors.toList());
+		.toList();
 		//@formatter:on
 	}
 
 	private UserInfo parseUserInfo(JsonNode userNode) {
-		UserInfo.Builder builder = new UserInfo.Builder();
+		var builder = new UserInfo.Builder();
 
 		builder.roomId(roomId);
 
-		JsonNode node = userNode.get("id");
+		var node = userNode.get("id");
 		if (node != null) {
 			builder.userId(node.asInt());
 		}
@@ -638,7 +618,7 @@ public class Room implements IRoom {
 		node = userNode.get("email_hash");
 		if (node != null) {
 			String profilePicture;
-			String emailHash = node.asText();
+			var emailHash = node.asText();
 			if (emailHash.startsWith("!")) {
 				profilePicture = emailHash.substring(1);
 			} else {
@@ -686,50 +666,50 @@ public class Room implements IRoom {
 	@Override
 	public List<PingableUser> getPingableUsers() throws IOException {
 		//@formatter:off
-		String url = baseUri()
+		var url = baseUri()
 			.setPathSegments("rooms", "pingable", Integer.toString(roomId))
 		.toString();
 		//@formatter:on
 
-		Response response = http.get(url);
+		var response = http.get(url);
 
 		if (response.getStatusCode() == 404) {
 			throw notFound(response, "get pingable users");
 		}
 
-		JsonNode root = response.getBodyAsJson();
-		List<PingableUser> users = new ArrayList<>(root.size());
-		for (JsonNode node : root) {
-			if (!node.isArray() || node.size() < 4) {
-				continue;
-			}
+		var root = response.getBodyAsJson();
 
-			int userId = node.get(0).asInt();
-			String username = node.get(1).asText();
-			LocalDateTime lastPost = WebSocketEventParsers.timestamp(node.get(3).asLong());
-
-			users.add(new PingableUser(roomId, userId, username, lastPost));
-		}
-		return users;
+		//@formatter:off
+		return JsonUtils.streamArray(root)
+			.filter(JsonNode::isArray)
+			.filter(node -> node.size() >= 4)
+			.map(node -> {
+				var userId = node.get(0).asInt();
+				var username = node.get(1).asText();
+				var lastPost = WebSocketEventParsers.timestamp(node.get(3).asLong());
+				return new PingableUser(roomId, userId, username, lastPost);
+			})
+		.toList();
+		//@formatter:on
 	}
 
 	@Override
 	public RoomInfo getRoomInfo() throws IOException {
 		//@formatter:off
-		String url = baseUri()
+		var url = baseUri()
 			.setPathSegments("rooms", "thumbs", Integer.toString(roomId))
 		.toString();
 		//@formatter:on
 
-		Response response = http.get(url);
+		var response = http.get(url);
 
 		if (response.getStatusCode() == 404) {
 			throw notFound(response, "get room info");
 		}
 
-		JsonNode root = response.getBodyAsJson();
+		var root = response.getBodyAsJson();
 
-		JsonNode node = root.get("id");
+		var node = root.get("id");
 		int id = (node == null) ? 0 : node.asInt();
 
 		node = root.get("name");
@@ -741,14 +721,14 @@ public class Room implements IRoom {
 		node = root.get("tags");
 		List<String> tags;
 		if (node == null) {
-			tags = new ArrayList<>(0);
+			tags = List.of();
 		} else {
-			Document dom = Jsoup.parse(node.asText());
+			var dom = Jsoup.parse(node.asText());
 
 			//@formatter:off
 			tags = dom.getElementsByTag("a").stream()
 				.map(Element::html)
-			.collect(Collectors.toList());
+			.toList();
 			//@formatter:on
 		}
 
@@ -761,7 +741,7 @@ public class Room implements IRoom {
 
 		try {
 			//@formatter:off
-			String url = baseUri()
+			var url = baseUri()
 				.setPathSegments("chats", "leave", Integer.toString(roomId))
 			.toString();
 
@@ -826,10 +806,10 @@ public class Room implements IRoom {
 
 		@Override
 		public Duration getWaitTime(Response response) {
-			String body = response.getBody();
-			Matcher m = response409Regex.matcher(body);
+			var body = response.getBody();
+			var m = response409Regex.matcher(body);
 
-			int seconds = m.find() ? Integer.parseInt(m.group(0)) : 5;
+			var seconds = m.find() ? Integer.parseInt(m.group(0)) : 5;
 			return Duration.ofSeconds(seconds);
 		}
 	}

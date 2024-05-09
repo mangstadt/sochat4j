@@ -4,10 +4,10 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -21,7 +21,6 @@ import javax.xml.xpath.XPathFactory;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.ErrorHandler;
@@ -69,7 +68,7 @@ public class Leaf {
 	 * @throws SAXException if there's a problem parsing the XML
 	 */
 	public static Leaf parse(byte[] bytes) throws SAXException {
-		try (InputStream in = new ByteArrayInputStream(bytes)) {
+		try (var in = new ByteArrayInputStream(bytes)) {
 			return parse(in);
 		} catch (IOException ignored) {
 			//never thrown because we're reading from a byte array
@@ -87,7 +86,7 @@ public class Leaf {
 	public static Leaf parse(InputStream in) throws SAXException, IOException {
 		DocumentBuilder builder;
 		try {
-			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			var factory = DocumentBuilderFactory.newInstance();
 
 			//see: https://rules.sonarsource.com/java/RSPEC-2755/
 			factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
@@ -131,7 +130,7 @@ public class Leaf {
 	 * @return the parent element or null if it has no parent
 	 */
 	public Leaf parent() {
-		Node parent = node.getParentNode();
+		var parent = node.getParentNode();
 		return (parent == null) ? null : new Leaf((Element) node.getParentNode(), xpath);
 	}
 
@@ -183,16 +182,13 @@ public class Leaf {
 	 * @return the leaf objects
 	 */
 	private List<Leaf> leavesFrom(NodeList nodeList) {
-		List<Leaf> leaves = new ArrayList<>();
-		for (int i = 0; i < nodeList.getLength(); i++) {
-			Node node = nodeList.item(i);
-			if (node instanceof Element) {
-				Element element = (Element) node;
-				Leaf leaf = new Leaf(element, xpath);
-				leaves.add(leaf);
-			}
-		}
-		return leaves;
+		//@formatter:off
+		return IntStream.range(0, nodeList.getLength())
+			.mapToObj(i -> nodeList.item(i))
+			.filter(node -> node instanceof Element)
+			.map(node -> new Leaf((Element)node, xpath))
+		.toList();
+		//@formatter:on
 	}
 
 	/**
@@ -210,15 +206,13 @@ public class Leaf {
 	 * @return the attributes
 	 */
 	public Map<String, String> attributes() {
-		NamedNodeMap attributes = element.getAttributes();
-		Map<String, String> map = new HashMap<>();
-		for (int i = 0; i < attributes.getLength(); i++) {
-			Attr attribute = (Attr) attributes.item(i);
-			String key = attribute.getName();
-			String value = attribute.getValue();
-			map.put(key, value);
-		}
-		return map;
+		var attributes = element.getAttributes();
+		
+		//@formatter:off
+		return IntStream.range(0, attributes.getLength())
+			.mapToObj(i -> (Attr) attributes.item(i))
+		.collect(Collectors.toMap(Attr::getName, Attr::getValue));
+		//@formatter:on
 	}
 
 	/**

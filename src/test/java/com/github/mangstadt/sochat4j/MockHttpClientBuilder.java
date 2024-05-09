@@ -13,14 +13,14 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.apache.http.Consts;
-import org.apache.http.HttpEntity;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpVersion;
 import org.apache.http.NameValuePair;
-import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -157,11 +157,11 @@ public class MockHttpClientBuilder {
 	 * @return this
 	 */
 	public MockHttpClientBuilder response(int statusCode, String body) {
-		HttpEntity entity = new StringEntity(body, StandardCharsets.UTF_8);
+		var entity = new StringEntity(body, StandardCharsets.UTF_8);
 
-		StatusLine statusLine = new BasicStatusLine(HttpVersion.HTTP_1_1, statusCode, "");
+		var statusLine = new BasicStatusLine(HttpVersion.HTTP_1_1, statusCode, "");
 
-		CloseableHttpResponse response = mock(CloseableHttpResponse.class);
+		var response = mock(CloseableHttpResponse.class);
 		when(response.getStatusLine()).thenReturn(statusLine);
 		when(response.getEntity()).thenReturn(entity);
 		responses.add(response);
@@ -192,7 +192,7 @@ public class MockHttpClientBuilder {
 			throw new IllegalStateException("Request/response list sizes do not match.");
 		}
 
-		CloseableHttpClient client = mock(CloseableHttpClient.class);
+		var client = mock(CloseableHttpClient.class);
 
 		try {
 			when(client.execute(any(HttpUriRequest.class))).then(new Answer<HttpResponse>() {
@@ -206,20 +206,20 @@ public class MockHttpClientBuilder {
 						fail("The unit test only expected " + expectedRequests.size() + " HTTP requests to be sent, but more were generated.");
 					}
 
-					HttpRequest actualRequest = (HttpRequest) invocation.getArguments()[0];
-					ExpectedRequest expectedRequest = expectedRequests.get(requestCount);
+					var actualRequest = (HttpRequest) invocation.getArguments()[0];
+					var expectedRequest = expectedRequests.get(requestCount);
 
 					assertEquals(expectedRequest.method, actualRequest.getRequestLine().getMethod());
 					assertEquals(expectedRequest.uri, actualRequest.getRequestLine().getUri());
 
 					if (actualRequest instanceof HttpPost) {
-						HttpPost actualPostRequest = (HttpPost) actualRequest;
-						String body = EntityUtils.toString(actualPostRequest.getEntity());
-						Set<NameValuePair> params = new HashSet<>(URLEncodedUtils.parse(body, Consts.UTF_8));
+						var actualPostRequest = (HttpPost) actualRequest;
+						var body = EntityUtils.toString(actualPostRequest.getEntity());
+						var params = new HashSet<>(URLEncodedUtils.parse(body, Consts.UTF_8));
 						assertEquals(expectedRequest.params, params);
 					}
 
-					IOException exception = responseExceptions.get(requestCount);
+					var exception = responseExceptions.get(requestCount);
 					if (exception != null) {
 						throw exception;
 					}
@@ -260,13 +260,16 @@ public class MockHttpClientBuilder {
 
 			this.method = method;
 			this.uri = uri;
-
-			this.params = new HashSet<>();
-			for (int i = 0; i < params.length; i += 2) {
-				String name = params[i];
-				String value = params[i + 1];
-				this.params.add(new BasicNameValuePair(name, value));
-			}
+			
+			//@formatter:off
+			this.params = IntStream.iterate(0, i -> i < params.length, i -> i + 2)
+				.mapToObj(i -> {
+					String name = params[i];
+					String value = params[i + 1];
+					return new BasicNameValuePair(name, value);
+				})
+			.collect(Collectors.toSet());
+			//@formatter:on
 		}
 	}
 }

@@ -20,8 +20,6 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicStatusLine;
 import org.apache.http.util.EntityUtils;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,13 +45,13 @@ public class HttpTest {
 
 	@Test
 	public void response_plaintext() throws Exception {
-		CloseableHttpResponse r = mockResponse(200, "The body");
-		CloseableHttpClient client = mock(CloseableHttpClient.class);
+		var r = mockResponse(200, "The body");
+		var client = mock(CloseableHttpClient.class);
 		when(client.execute(any(HttpUriRequest.class))).thenReturn(r);
 
-		Http http = new Http(client);
+		var http = new Http(client);
 
-		Http.Response response = http.get("uri");
+		var response = http.get("uri");
 		assertEquals(200, response.getStatusCode());
 		assertEquals("The body", response.getBody());
 		try {
@@ -67,13 +65,13 @@ public class HttpTest {
 
 	@Test
 	public void response_json() throws Exception {
-		CloseableHttpResponse r = mockResponse(200, "{}");
-		CloseableHttpClient client = mock(CloseableHttpClient.class);
+		var r = mockResponse(200, "{}");
+		var client = mock(CloseableHttpClient.class);
 		when(client.execute(any(HttpUriRequest.class))).thenReturn(r);
 
-		Http http = new Http(client);
+		var http = new Http(client);
 
-		Http.Response response = http.get("uri");
+		var response = http.get("uri");
 		assertEquals(200, response.getStatusCode());
 		assertEquals("{}", response.getBody());
 		assertNotNull(response.getBodyAsJson());
@@ -82,13 +80,13 @@ public class HttpTest {
 
 	@Test
 	public void response_html() throws Exception {
-		CloseableHttpResponse r = mockResponse(200, "<html><a href=\"foo.html\">link</a></html>");
-		CloseableHttpClient client = mock(CloseableHttpClient.class);
+		var r = mockResponse(200, "<html><a href=\"foo.html\">link</a></html>");
+		var client = mock(CloseableHttpClient.class);
 		when(client.execute(any(HttpUriRequest.class))).thenReturn(r);
 
-		Http http = new Http(client);
+		var http = new Http(client);
 
-		Http.Response response = http.get("http://www.example.com/test/index.html");
+		var response = http.get("http://www.example.com/test/index.html");
 		assertEquals(200, response.getStatusCode());
 		assertEquals("<html><a href=\"foo.html\">link</a></html>", response.getBody());
 		try {
@@ -101,8 +99,8 @@ public class HttpTest {
 		/*
 		 * Make sure it resolves relative URLs.
 		 */
-		Document document = response.getBodyAsHtml();
-		Element link = document.select("a").first();
+		var document = response.getBodyAsHtml();
+		var link = document.select("a").first();
 		assertEquals("http://www.example.com/test/foo.html", link.absUrl("href"));
 	}
 
@@ -111,7 +109,7 @@ public class HttpTest {
 	 */
 	@Test(expected = IllegalArgumentException.class)
 	public void post_parameters_odd() throws Exception {
-		Http http = new Http(mock(CloseableHttpClient.class));
+		var http = new Http(mock(CloseableHttpClient.class));
 		http.post("uri", "one");
 	}
 
@@ -120,14 +118,14 @@ public class HttpTest {
 	 */
 	@Test
 	public void post_parameters_none() throws Exception {
-		CloseableHttpClient client = mock(CloseableHttpClient.class);
+		var client = mock(CloseableHttpClient.class);
 		when(client.execute(any(HttpUriRequest.class))).then(invocation -> {
-			HttpPost request = (HttpPost) invocation.getArguments()[0];
+			var request = (HttpPost) invocation.getArguments()[0];
 			assertNull(request.getEntity());
 			return mockResponse(200, "");
 		});
 
-		Http http = new Http(client);
+		var http = new Http(client);
 		http.post("uri");
 		verify(client).execute(any(HttpUriRequest.class));
 	}
@@ -137,7 +135,7 @@ public class HttpTest {
 	 */
 	@Test(expected = NullPointerException.class)
 	public void post_parameters_null_name() throws Exception {
-		Http http = new Http(mock(CloseableHttpClient.class));
+		var http = new Http(mock(CloseableHttpClient.class));
 		http.post("uri", (String) null, "value");
 	}
 
@@ -146,53 +144,53 @@ public class HttpTest {
 	 */
 	@Test
 	public void post_parameters_null_value() throws Exception {
-		CloseableHttpClient client = mock(CloseableHttpClient.class);
+		var client = mock(CloseableHttpClient.class);
 		when(client.execute(any(HttpUriRequest.class))).then(invocation -> {
-			HttpPost request = (HttpPost) invocation.getArguments()[0];
-			String body = EntityUtils.toString(request.getEntity());
+			var request = (HttpPost) invocation.getArguments()[0];
+			var body = EntityUtils.toString(request.getEntity());
 			assertEquals("one=null", body);
 
 			return mockResponse(200, "");
 		});
 
-		Http http = new Http(client);
+		var http = new Http(client);
 		http.post("uri", "one", null);
 		verify(client).execute(any(HttpUriRequest.class));
 	}
 
 	@Test
 	public void rate_limit_handler() throws Exception {
-		CloseableHttpResponse response1 = mockResponse(400, "");
-		CloseableHttpResponse response2 = mockResponse(200, "");
+		var response1 = mockResponse(400, "");
+		var response2 = mockResponse(200, "");
 
-		CloseableHttpClient client = mock(CloseableHttpClient.class);
+		var client = mock(CloseableHttpClient.class);
 		when(client.execute(any(HttpUriRequest.class))).thenReturn(response1, response2);
 
-		RateLimitHandler rateLimitHandler = mock(RateLimitHandler.class);
+		var rateLimitHandler = mock(RateLimitHandler.class);
 		when(rateLimitHandler.isRateLimited(any(Response.class))).thenReturn(true, false);
 		when(rateLimitHandler.getMaxAttempts()).thenReturn(3);
 		when(rateLimitHandler.getWaitTime(any(Response.class))).thenReturn(Duration.ofSeconds(2));
 
-		Http http = new Http(client);
+		var http = new Http(client);
 		http.post("uri", rateLimitHandler);
 		assertEquals(2000, Sleeper.getTimeSlept());
 	}
 
 	@Test
 	public void rate_limit_handler_give_up() throws Exception {
-		CloseableHttpResponse response1 = mockResponse(400, "");
-		CloseableHttpResponse response2 = mockResponse(400, "");
-		CloseableHttpResponse response3 = mockResponse(400, "");
+		var response1 = mockResponse(400, "");
+		var response2 = mockResponse(400, "");
+		var response3 = mockResponse(400, "");
 
-		CloseableHttpClient client = mock(CloseableHttpClient.class);
+		var client = mock(CloseableHttpClient.class);
 		when(client.execute(any(HttpUriRequest.class))).thenReturn(response1, response2, response3);
 
-		RateLimitHandler rateLimitHandler = mock(RateLimitHandler.class);
+		var rateLimitHandler = mock(RateLimitHandler.class);
 		when(rateLimitHandler.isRateLimited(any(Response.class))).thenReturn(true, true, true);
 		when(rateLimitHandler.getMaxAttempts()).thenReturn(3);
 		when(rateLimitHandler.getWaitTime(any(Response.class))).thenReturn(Duration.ofSeconds(2));
 
-		Http http = new Http(client);
+		var http = new Http(client);
 
 		try {
 			http.post("uri", rateLimitHandler);
@@ -204,7 +202,7 @@ public class HttpTest {
 	}
 
 	private static CloseableHttpResponse mockResponse(int statusCode, String body) throws Exception {
-		CloseableHttpResponse response = mock(CloseableHttpResponse.class);
+		var response = mock(CloseableHttpResponse.class);
 		when(response.getStatusLine()).thenReturn(new BasicStatusLine(HttpVersion.HTTP_1_1, statusCode, ""));
 		when(response.getEntity()).thenReturn(new StringEntity(body));
 		return response;

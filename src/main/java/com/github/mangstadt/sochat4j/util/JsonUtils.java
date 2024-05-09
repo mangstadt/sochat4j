@@ -1,5 +1,8 @@
 package com.github.mangstadt.sochat4j.util;
 
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.PrettyPrinter;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
@@ -79,6 +82,15 @@ public final class JsonUtils {
 			//should never be thrown
 			throw new RuntimeException(e);
 		}
+	}
+	
+	/**
+	 * Streams the elements of an array.
+	 * @param array the array
+	 * @return the stream
+	 */
+	public static Stream<JsonNode> streamArray(JsonNode array) {
+		return StreamSupport.stream(array.spliterator(), false);
 	}
 
 	private JsonUtils() {

@@ -5,8 +5,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 import com.github.mangstadt.sochat4j.ChatClient;
-import com.github.mangstadt.sochat4j.IChatClient;
-import com.github.mangstadt.sochat4j.IRoom;
 import com.github.mangstadt.sochat4j.InvalidCredentialsException;
 import com.github.mangstadt.sochat4j.PrivateRoomException;
 import com.github.mangstadt.sochat4j.RoomNotFoundException;
@@ -22,13 +20,13 @@ import com.github.mangstadt.sochat4j.event.UserLeftEvent;
  */
 public class WelcomeBot {
 	public static void main(String[] args) {
-		Site site = Site.STACKOVERFLOW;
-		String email = "email@example.com";
-		String password = "password";
-		int roomId = 1;
+		var site = Site.STACKOVERFLOW;
+		var email = "email@example.com";
+		var password = "password";
+		var roomId = 1;
 
-		try (IChatClient client = ChatClient.connect(site, email, password)) {
-			IRoom room = client.joinRoom(roomId);
+		try (var client = ChatClient.connect(site, email, password)) {
+			var room = client.joinRoom(roomId);
 
 			room.addEventListener(UserEnteredEvent.class, event -> {
 				try {
@@ -49,7 +47,7 @@ public class WelcomeBot {
 			room.sendMessage("WelcomeBot Online!");
 
 			System.out.println("Press Enter to terminate the bot.");
-			try (BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
+			try (var reader = new BufferedReader(new InputStreamReader(System.in))) {
 				reader.readLine();
 			}
 

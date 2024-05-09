@@ -27,7 +27,7 @@ public final class ResponseSamples {
 	 * @return the HTML page
 	 */
 	public static String loginPage(String fkey) {
-		String html = readFile("users-login.html");
+		var html = readFile("users-login.html");
 		return html.replace("${fkey}", fkey);
 	}
 
@@ -39,18 +39,12 @@ public final class ResponseSamples {
 	 * @return the HTML page
 	 */
 	public static String homepage(Site site, String username, int userId) {
-		String file = null;
-		switch (site) {
-		case META:
-			file = "homepage.m.html";
-			break;
-		case STACKEXCHANGE:
-			file = "homepage.se.html";
-			break;
-		case STACKOVERFLOW:
-			file = "homepage.so.html";
-			break;
-		}
+		var file = switch (site) {
+		case META -> "homepage.m.html";
+		case STACKEXCHANGE -> "homepage.se.html";
+		case STACKOVERFLOW -> "homepage.so.html";
+		default -> null;
+		};
 
 		//@formatter:off
 		return readFile(file)
@@ -76,7 +70,7 @@ public final class ResponseSamples {
 	 * @return the HTML page
 	 */
 	public static String room(String fkey, boolean canPost) {
-		String html = readFile("rooms-1.html");
+		var html = readFile("rooms-1.html");
 		html = html.replace("${fkey}", fkey);
 
 		if (!canPost) {
@@ -93,7 +87,7 @@ public final class ResponseSamples {
 	 * @return the HTML page
 	 */
 	public static String privateRoom(int roomId) {
-		String html = readFile("private-room.html");
+		var html = readFile("private-room.html");
 		return html.replace("${roomId}", roomId + "");
 	}
 
@@ -112,7 +106,7 @@ public final class ResponseSamples {
 	 * @return the chat room HTML
 	 */
 	public static String protectedRoom(String fkey) {
-		String html = readFile("rooms-15-protected.html");
+		var html = readFile("rooms-15-protected.html");
 		return html.replace("${fkey}", fkey);
 	}
 
@@ -140,7 +134,7 @@ public final class ResponseSamples {
 	 */
 	public static String wsAuth(String url) {
 		//@formatter:off
-		ObjectNode root = JsonUtils.newObject()
+		var root = JsonUtils.newObject()
 			.put("url", url);
 		//@formatter:on
 
@@ -154,7 +148,7 @@ public final class ResponseSamples {
 	 */
 	public static String newMessage(long id) {
 		//@formatter:off
-		ObjectNode root = JsonUtils.newObject()
+		var root = JsonUtils.newObject()
 			.put("id", id)
 			.put("time", (System.currentTimeMillis() / 1000));
 		//@formatter:on
@@ -321,12 +315,12 @@ public final class ResponseSamples {
 	 */
 	public static String roomInfo(int id, String name, String description, boolean favorite, List<String> tags) {
 		//@formatter:off
-		String tagsValue = tags.stream()
+		var tagsValue = tags.stream()
 			.map(tag -> "\\u003ca rel=\"noopener noreferrer\" class=\"tag\" href=\"http://stackoverflow.com/tags/" + tag + "/info\"\\u003e" + tag + "\\u003c/a\\u003e")
 			.map(tag -> tag.replace("\"", "\\\""))
 		.collect(Collectors.joining(" "));
 		
-		ObjectNode root = JsonUtils.newObject()
+		var root = JsonUtils.newObject()
 			.put("id", id)
 			.put("name", name)
 			.put("description", description)

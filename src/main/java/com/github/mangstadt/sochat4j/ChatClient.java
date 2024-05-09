@@ -9,12 +9,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ContentType;
@@ -26,7 +24,6 @@ import org.glassfish.tyrus.client.ClientManager;
 import org.glassfish.tyrus.client.ClientProperties;
 import org.glassfish.tyrus.container.jdk.client.JdkClientContainer;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 
 import com.github.mangstadt.sochat4j.util.Http;
 
@@ -69,16 +66,16 @@ public class ChatClient implements IChatClient {
 		 * Solution: https://stackoverflow.com/q/36473478/13379
 		 */
 		//@formatter:off
-		CloseableHttpClient httpClient = HttpClients.custom() 
+		var httpClient = HttpClients.custom() 
 			.setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build())
 		.build();
 		//@formatter:on
 
-		ClientManager webSocketClient = ClientManager.createClient(JdkClientContainer.class.getName());
+		var webSocketClient = ClientManager.createClient(JdkClientContainer.class.getName());
 		webSocketClient.setDefaultMaxSessionIdleTimeout(0);
 		webSocketClient.getProperties().put(ClientProperties.RETRY_AFTER_SERVICE_UNAVAILABLE, true);
 
-		ChatClient client = new ChatClient(site, httpClient, webSocketClient);
+		var client = new ChatClient(site, httpClient, webSocketClient);
 		client.login(email, password);
 		return client;
 	}
@@ -103,15 +100,15 @@ public class ChatClient implements IChatClient {
 		}
 
 		//@formatter:off
-		String url = new URIBuilder()
+		var url = new URIBuilder()
 			.setScheme("https")
 			.setHost(site.getLoginDomain())
 			.setPath("/users/login")
 		.toString();
 		//@formatter:on
 
-		Http.Response response = http.get(url);
-		String fkey = parseFKey(response.getBodyAsHtml());
+		var response = http.get(url);
+		var fkey = parseFKey(response.getBodyAsHtml());
 		if (fkey == null) {
 			throw new IOException("Unable to login. \"fkey\" field not found on login page.");
 		}
@@ -124,8 +121,8 @@ public class ChatClient implements IChatClient {
 		);
 		//@formatter:on
 
-		int statusCode = response.getStatusCode();
-		boolean success = (statusCode == 302);
+		var statusCode = response.getStatusCode();
+		var success = (statusCode == 302);
 		if (!success) {
 			throw new InvalidCredentialsException();
 		}
@@ -145,26 +142,26 @@ public class ChatClient implements IChatClient {
 	 * @return the fkey or null if not found
 	 */
 	String parseFKey(Document dom) {
-		Element element = dom.selectFirst("input[name=fkey]");
+		var element = dom.selectFirst("input[name=fkey]");
 		return (element == null) ? null : element.attr("value");
 	}
 
 	private void parseUserInfo() throws IOException {
 		//@formatter:off
-		String url = new URIBuilder()
+		var url = new URIBuilder()
 			.setScheme("https")
 			.setHost(site.getChatDomain())
 		.toString();
 		//@formatter:on
 
-		Http.Response response = http.get(url);
-		Document dom = response.getBodyAsHtml();
+		var response = http.get(url);
+		var dom = response.getBodyAsHtml();
 
-		Element link = dom.selectFirst(".topbar-menu-links a");
+		var link = dom.selectFirst(".topbar-menu-links a");
 		if (link != null) {
-			String profileUrl = link.attr("href");
-			Pattern p = Pattern.compile("/users/(\\d+)");
-			Matcher m = p.matcher(profileUrl);
+			var profileUrl = link.attr("href");
+			var p = Pattern.compile("/users/(\\d+)");
+			var m = p.matcher(profileUrl);
 			if (m.find()) {
 				userId = Integer.valueOf(m.group(1));
 			}
@@ -190,7 +187,7 @@ public class ChatClient implements IChatClient {
 		assertLoggedIn();
 
 		synchronized (rooms) {
-			Room room = rooms.get(roomId);
+			var room = rooms.get(roomId);
 			if (room != null) {
 				return room;
 			}
@@ -246,14 +243,14 @@ public class ChatClient implements IChatClient {
 
 	private String getMessageContent(long messageId, boolean plain) throws IOException {
 		//@formatter:off
-		String url = baseUri()
+		var url = baseUri()
 			.setPathSegments("message", Long.toString(messageId))
 			.setParameter("plain", plain ? "true" : "false")
 		.toString();
 		//@formatter:on
 
-		Http.Response response = http.get(url);
-		int statusCode = response.getStatusCode();
+		var response = http.get(url);
+		var statusCode = response.getStatusCode();
 		if (statusCode != 200) {
 			throw new IOException("HTTP " + statusCode + " response returned: " + response.getBody());
 		}
@@ -273,14 +270,14 @@ public class ChatClient implements IChatClient {
 
 	private String uploadImage(byte[] imageData, String imageUrl) throws IOException {
 		//@formatter:off
-		String url = baseUri()
+		var url = baseUri()
 			.setPath("/upload/image")
 		.toString();
 		//@formatter:on
 
-		HttpPost request = new HttpPost(url);
+		var request = new HttpPost(url);
 
-		MultipartEntityBuilder meb = MultipartEntityBuilder.create();
+		var meb = MultipartEntityBuilder.create();
 		if (imageData != null) {
 			meb.addBinaryBody("filename", imageData, ContentType.DEFAULT_BINARY, "file.jpg");
 		}
@@ -289,14 +286,16 @@ public class ChatClient implements IChatClient {
 		}
 		request.setEntity(meb.build());
 
-		String exceptionPreamble = "Uploading image";
-		if (imageUrl != null) {
-			exceptionPreamble += " '" + imageUrl + "'";
+		String exceptionPreamble;
+		if (imageData != null) {
+			exceptionPreamble = "Uploading " + (imageData.length / 1024) + " KB image";
+		} else {
+			exceptionPreamble = "Uploading image '" + imageUrl + "'";
 		}
 
 		String html;
-		try (CloseableHttpResponse response = http.getClient().execute(request)) {
-			int status = response.getStatusLine().getStatusCode();
+		try (var response = http.getClient().execute(request)) {
+			var status = response.getStatusLine().getStatusCode();
 			if (status != 200) {
 				throw new IOException(exceptionPreamble + " resulted in HTTP " + status + " response.");
 			}
@@ -304,8 +303,8 @@ public class ChatClient implements IChatClient {
 			html = EntityUtils.toString(response.getEntity());
 		}
 
-		Pattern p = Pattern.compile("var error = '(.*?)';");
-		Matcher m = p.matcher(html);
+		var p = Pattern.compile("var error = '(.*?)';");
+		var m = p.matcher(html);
 		if (m.find()) {
 			throw new IOException(exceptionPreamble + " resulted in error: " + m.group(1));
 		}
@@ -329,12 +328,12 @@ public class ChatClient implements IChatClient {
 		synchronized (rooms) {
 			//leave all rooms
 			if (!rooms.isEmpty()) {
-				Room anyRoom = rooms.values().iterator().next();
-				String fkey = anyRoom.getFkey();
+				var anyRoom = rooms.values().iterator().next();
+				var fkey = anyRoom.getFkey();
 
 				try {
 					//@formatter:off
-					String url = baseUri()
+					var url = baseUri()
 						.setPath("/chats/leave/all")
 					.toString();
 
@@ -348,7 +347,7 @@ public class ChatClient implements IChatClient {
 				}
 			}
 
-			for (Room room : rooms.values()) {
+			for (var room : rooms.values()) {
 				try {
 					room.close();
 				} catch (IOException e) {

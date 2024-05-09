@@ -1,10 +1,14 @@
 package com.github.mangstadt.sochat4j;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * Defines how a chat message should be split up if it exceeds the max message
@@ -18,18 +22,18 @@ public enum SplitStrategy {
 	WORD {
 		@Override
 		public List<String> _split(String message, int maxLength) {
-			boolean[] markdownLocations = markdownLocations(message);
+			var markdownLocations = markdownLocations(message);
 
-			String ellipsis = " ...";
+			var ellipsis = " ...";
 			maxLength -= ellipsis.length();
 
-			List<String> posts = new ArrayList<>();
-			Iterator<String> it = new WordSplitter(message, maxLength, markdownLocations);
+			var posts = new ArrayList<String>();
+			var it = new WordSplitter(message, maxLength, markdownLocations);
 			while (it.hasNext()) {
-				String post = it.next();
+				var post = it.next();
 				posts.add(it.hasNext() ? post + ellipsis : post);
 			}
-			return posts;
+			return Collections.unmodifiableList(posts);
 		}
 
 		/**
@@ -69,14 +73,14 @@ public enum SplitStrategy {
 
 				final String post;
 
-				int charactersLeft = message.length() - leftBound;
+				var charactersLeft = message.length() - leftBound;
 				if (charactersLeft <= maxLength) {
 					post = message.substring(leftBound);
 					leftBound = message.length();
 					return post;
 				}
 
-				int spacePos = message.lastIndexOf(' ', leftBound + maxLength);
+				var spacePos = message.lastIndexOf(' ', leftBound + maxLength);
 				if (spacePos < leftBound) {
 					spacePos = -1;
 				}
@@ -125,11 +129,11 @@ public enum SplitStrategy {
 		 */
 		private boolean[] markdownLocations(String message) {
 			boolean inBold = false, inItalic = false, inCode = false, inTag = false, inLink = false;
-			boolean[] inMarkdown = new boolean[message.length()];
+			var inMarkdown = new boolean[message.length()];
 
-			for (int i = 0; i < message.length(); i++) {
-				char cur = message.charAt(i);
-				char next = (i == message.length() - 1) ? 0 : message.charAt(i + 1);
+			for (var i = 0; i < message.length(); i++) {
+				var cur = message.charAt(i);
+				var next = (i == message.length() - 1) ? 0 : message.charAt(i + 1);
 
 				boolean skipAheadOne = false;
 				switch (cur) {
@@ -199,12 +203,8 @@ public enum SplitStrategy {
 	NEWLINE {
 		@Override
 		public List<String> _split(String message, int maxLength) {
-			List<String> posts = new ArrayList<>();
-			Iterator<String> it = new NewlineSplitter(message, maxLength);
-			while (it.hasNext()) {
-				posts.add(it.next());
-			}
-			return posts;
+			var it = new NewlineSplitter(message, maxLength);
+			return stream(it).toList();
 		}
 
 		class NewlineSplitter implements Iterator<String> {
@@ -230,14 +230,14 @@ public enum SplitStrategy {
 
 				final String post;
 
-				int charactersLeft = message.length() - leftBound;
+				var charactersLeft = message.length() - leftBound;
 				if (charactersLeft <= maxLength) {
 					post = message.substring(leftBound);
 					leftBound = message.length();
 					return post;
 				}
 
-				int newlinePos = message.lastIndexOf('\n', leftBound + maxLength);
+				var newlinePos = message.lastIndexOf('\n', leftBound + maxLength);
 				if (newlinePos < leftBound) {
 					newlinePos = -1;
 				}
@@ -261,7 +261,7 @@ public enum SplitStrategy {
 	NONE {
 		@Override
 		protected List<String> _split(String message, int maxLength) {
-			return Arrays.asList(message.substring(0, maxLength));
+			return List.of(message.substring(0, maxLength));
 		}
 	};
 
@@ -274,9 +274,13 @@ public enum SplitStrategy {
 	 */
 	public List<String> split(String message, int maxLength) {
 		if (maxLength < 1 || message.length() <= maxLength) {
-			return Arrays.asList(message);
+			return List.of(message);
 		}
 		return _split(message, maxLength);
+	}
+	
+	private static Stream<String> stream(Iterator<String> it) {
+		return StreamSupport.stream(Spliterators.spliteratorUnknownSize(it, Spliterator.ORDERED), false);
 	}
 
 	protected abstract List<String> _split(String message, int maxLength);

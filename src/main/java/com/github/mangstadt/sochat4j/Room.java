@@ -1,5 +1,7 @@
 package com.github.mangstadt.sochat4j;
 
+import static java.util.function.Function.identity;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -356,10 +358,10 @@ public class Room implements IRoom {
 	private Map<WebSocketEventType, List<JsonNode>> groupEventsByType(JsonNode eventsNode) {
 		//@formatter:off
 		Map<WebSocketEventType, List<JsonNode>> eventsByType = Arrays.stream(WebSocketEventType.values())
-		.collect(Collectors.toMap(type -> type, type -> new ArrayList<>()));
+		.collect(Collectors.toMap(identity(), type -> new ArrayList<>()));
 		//@formatter:on
 
-		for (JsonNode eventNode : eventsNode) {
+		for (var eventNode : eventsNode) {
 			var eventTypeNode = eventNode.get("event_type");
 			if (eventTypeNode == null || !eventTypeNode.canConvertToInt()) {
 				logger.warning(() -> "[room " + roomId + "]: Ignoring JSON object that does not have a valid \"event_type\" field:\n" + JsonUtils.prettyPrint(eventNode) + "\n");
@@ -437,7 +439,7 @@ public class Room implements IRoom {
 		//@formatter:on
 
 		var messageIds = new ArrayList<Long>(parts.size());
-		for (String part : parts) {
+		for (var part : parts) {
 			//@formatter:off
 			var response = http.post(url, new RateLimit409Handler(),
 				"text", part,

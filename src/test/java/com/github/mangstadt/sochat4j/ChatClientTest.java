@@ -1,11 +1,12 @@
 package com.github.mangstadt.sochat4j;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -23,7 +24,7 @@ import java.util.List;
 
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import jakarta.websocket.ClientEndpointConfig;
 import jakarta.websocket.Endpoint;
@@ -89,7 +90,8 @@ public class ChatClientTest {
 		}
 	}
 
-	@Test(expected = IllegalStateException.class)
+	@SuppressWarnings("resource")
+	@Test
 	public void joinRoom_not_logged_in() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
@@ -99,7 +101,7 @@ public class ChatClientTest {
 		WebSocketContainer ws = mock(WebSocketContainer.class);
 
 		try (var client = new ChatClient(Site.STACKOVERFLOW, httpClient, ws)) {
-			client.joinRoom(1);
+			assertThrows(IllegalStateException.class, () -> client.joinRoom(1));
 		}
 	}
 

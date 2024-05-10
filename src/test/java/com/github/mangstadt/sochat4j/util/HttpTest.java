@@ -1,9 +1,10 @@
 package com.github.mangstadt.sochat4j.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -20,9 +21,9 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicStatusLine;
 import org.apache.http.util.EntityUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.mangstadt.sochat4j.util.Http.RateLimitHandler;
@@ -33,12 +34,12 @@ import com.github.mangstadt.sochat4j.util.Http.Response;
  */
 @SuppressWarnings("resource")
 public class HttpTest {
-	@Before
+	@BeforeEach
 	public void before() {
 		Sleeper.startUnitTest();
 	}
 
-	@After
+	@AfterEach
 	public void after() {
 		Sleeper.endUnitTest();
 	}
@@ -107,10 +108,10 @@ public class HttpTest {
 	/**
 	 * Vararg parameter must have an even number of arguments.
 	 */
-	@Test(expected = IllegalArgumentException.class)
+	@Test
 	public void post_parameters_odd() throws Exception {
 		var http = new Http(mock(CloseableHttpClient.class));
-		http.post("uri", "one");
+		assertThrows(IllegalArgumentException.class, () -> http.post("uri", "one"));
 	}
 
 	/**
@@ -133,10 +134,10 @@ public class HttpTest {
 	/**
 	 * Parameter names cannot be null.
 	 */
-	@Test(expected = NullPointerException.class)
+	@Test
 	public void post_parameters_null_name() throws Exception {
 		var http = new Http(mock(CloseableHttpClient.class));
-		http.post("uri", (String) null, "value");
+		assertThrows(NullPointerException.class, () -> http.post("uri", (String) null, "value"));
 	}
 
 	/**

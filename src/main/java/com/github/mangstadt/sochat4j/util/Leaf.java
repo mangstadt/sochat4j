@@ -51,7 +51,7 @@ public class Leaf {
 	 */
 	public Leaf(Node node) {
 		this.node = node;
-		this.element = (node instanceof Element) ? (Element) node : null;
+		this.element = (node instanceof Element element) ? element : null;
 		this.xpath = XPathFactory.newInstance().newXPath();
 	}
 
@@ -184,9 +184,10 @@ public class Leaf {
 	private List<Leaf> leavesFrom(NodeList nodeList) {
 		//@formatter:off
 		return IntStream.range(0, nodeList.getLength())
-			.mapToObj(i -> nodeList.item(i))
-			.filter(node -> node instanceof Element)
-			.map(node -> new Leaf((Element)node, xpath))
+			.mapToObj(nodeList::item)
+			.filter(Element.class::isInstance)
+			.map(Element.class::cast)
+			.map(element -> new Leaf(element, xpath))
 		.toList();
 		//@formatter:on
 	}
@@ -210,7 +211,8 @@ public class Leaf {
 		
 		//@formatter:off
 		return IntStream.range(0, attributes.getLength())
-			.mapToObj(i -> (Attr) attributes.item(i))
+			.mapToObj(attributes::item)
+			.map(Attr.class::cast)
 		.collect(Collectors.toMap(Attr::getName, Attr::getValue));
 		//@formatter:on
 	}

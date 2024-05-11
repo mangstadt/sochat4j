@@ -524,8 +524,7 @@ public class Room implements IRoom {
 
 		var body = response.getBody();
 		switch (body) {
-		case "\"ok\"":
-		case "\"This message has already been deleted.\"":
+		case "\"ok\"", "\"This message has already been deleted.\"":
 			//message successfully deleted
 			break;
 		case "\"It is too late to delete this message\"":

@@ -3,8 +3,8 @@ package com.github.mangstadt.sochat4j;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -899,19 +899,8 @@ class RoomTest {
 		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
-
-		try {
-			room.getMessages(3);
-			fail();
-		} catch (IOException expected) {
-		}
-
-		try {
-			room.getMessages(3);
-			fail();
-		} catch (IOException expected) {
-		}
-
+		assertThrows(IOException.class, () -> room.getMessages(3));
+		assertThrows(IOException.class, () -> room.getMessages(3));
 		assertEquals(List.of(), room.getMessages(3));
 		assertEquals(List.of(), room.getMessages(3));
 		assertEquals(List.of(), room.getMessages(3));
@@ -1071,11 +1060,7 @@ class RoomTest {
 		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
-		try {
-			room.sendMessage("one");
-			fail();
-		} catch (RoomPermissionException expected) {
-		}
+		assertThrows(RoomPermissionException.class, () -> room.sendMessage("one"));
 
 		verifyNumberOfRequestsSent(httpClient, 6);
 	}
@@ -1118,19 +1103,8 @@ class RoomTest {
 		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
-
-		try {
-			room.sendMessage("one");
-			fail();
-		} catch (IOException expected) {
-		}
-
-		try {
-			room.sendMessage("one");
-			fail();
-		} catch (IOException expected) {
-		}
-
+		assertThrows(IOException.class, () -> room.sendMessage("one"));
+		assertThrows(IOException.class, () -> room.sendMessage("one"));
 		assertEquals(0, room.sendMessage("one"));
 		assertEquals(0, room.sendMessage("one"));
 
@@ -1189,28 +1163,10 @@ class RoomTest {
 		var room = chatClient.joinRoom(1);
 
 		room.editMessage(20157247, "edited");
-
-		try {
-			room.editMessage(20157247, "edited");
-			fail();
-		} catch (IOException expected) {
-		}
-		try {
-			room.editMessage(20157247, "edited");
-			fail();
-		} catch (IOException expected) {
-		}
-		try {
-			room.editMessage(20157247, "edited");
-			fail();
-		} catch (IOException expected) {
-		}
-		try {
-			room.editMessage(20157247, "edited");
-			fail();
-		} catch (IOException expected) {
-		}
-
+		assertThrows(IOException.class, () -> room.editMessage(20157247, "edited"));
+		assertThrows(IOException.class, () -> room.editMessage(20157247, "edited"));
+		assertThrows(IOException.class, () -> room.editMessage(20157247, "edited"));
+		assertThrows(IOException.class, () -> room.editMessage(20157247, "edited"));
 		room.editMessage(20157247, "edited");
 
 		verifyNumberOfRequestsSent(httpClient, 12);
@@ -1262,26 +1218,10 @@ class RoomTest {
 		var room = chatClient.joinRoom(1);
 
 		room.deleteMessage(20157247);
-
-		try {
-			room.deleteMessage(20157247);
-			fail();
-		} catch (IOException expected) {
-		}
-
+		assertThrows(IOException.class, () -> room.deleteMessage(20157247));
 		room.deleteMessage(20157247);
-
-		try {
-			room.deleteMessage(20157247);
-			fail();
-		} catch (IOException expected) {
-		}
-		try {
-			room.deleteMessage(20157247);
-			fail();
-		} catch (IOException expected) {
-		}
-
+		assertThrows(IOException.class, () -> room.deleteMessage(20157247));
+		assertThrows(IOException.class, () -> room.deleteMessage(20157247));
 		room.deleteMessage(20157247);
 
 		verifyNumberOfRequestsSent(httpClient, 12);
@@ -1358,19 +1298,8 @@ class RoomTest {
 		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
-
-		try {
-			room.getPingableUsers();
-			fail();
-		} catch (IOException expected) {
-		}
-
-		try {
-			room.getPingableUsers();
-			fail();
-		} catch (IOException expected) {
-		}
-
+		assertThrows(IOException.class, () -> room.getPingableUsers());
+		assertThrows(IOException.class, () -> room.getPingableUsers());
 		assertEquals(0, room.getPingableUsers().size());
 		assertEquals(0, room.getPingableUsers().size());
 		assertEquals(1, room.getPingableUsers().size());
@@ -1469,13 +1398,7 @@ class RoomTest {
 		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
-
-		try {
-			room.getUserInfo(List.of(13379));
-			fail();
-		} catch (IOException expected) {
-		}
-
+		assertThrows(IOException.class, () -> room.getUserInfo(List.of(13379)));
 		assertEquals(0, room.getUserInfo(List.of(13379)).size());
 		assertEquals(0, room.getUserInfo(List.of(13379)).size());
 
@@ -1556,18 +1479,8 @@ class RoomTest {
 		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
-
-		try {
-			room.getRoomInfo();
-			fail();
-		} catch (IOException expected) {
-		}
-
-		try {
-			room.getRoomInfo();
-			fail();
-		} catch (IOException expected) {
-		}
+		assertThrows(IOException.class, () -> room.getRoomInfo());
+		assertThrows(IOException.class, () -> room.getRoomInfo());
 
 		var info = room.getRoomInfo();
 		assertNull(info.getDescription());

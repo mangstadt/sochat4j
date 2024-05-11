@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -55,12 +54,7 @@ class HttpTest {
 		var response = http.get("uri");
 		assertEquals(200, response.getStatusCode());
 		assertEquals("The body", response.getBody());
-		try {
-			response.getBodyAsJson();
-			fail();
-		} catch (JsonProcessingException e) {
-			//expected
-		}
+		assertThrows(JsonProcessingException.class, () -> response.getBodyAsJson());
 		assertNotNull(response.getBodyAsHtml());
 	}
 
@@ -90,12 +84,7 @@ class HttpTest {
 		var response = http.get("http://www.example.com/test/index.html");
 		assertEquals(200, response.getStatusCode());
 		assertEquals("<html><a href=\"foo.html\">link</a></html>", response.getBody());
-		try {
-			response.getBodyAsJson();
-			fail();
-		} catch (JsonProcessingException e) {
-			//expected
-		}
+		assertThrows(JsonProcessingException.class, () -> response.getBodyAsJson());
 
 		/*
 		 * Make sure it resolves relative URLs.
@@ -192,13 +181,7 @@ class HttpTest {
 		when(rateLimitHandler.getWaitTime(any(Response.class))).thenReturn(Duration.ofSeconds(2));
 
 		var http = new Http(client);
-
-		try {
-			http.post("uri", rateLimitHandler);
-			fail();
-		} catch (IOException e) {
-			//expected
-		}
+		assertThrows(IOException.class, () -> http.post("uri", rateLimitHandler));
 		assertEquals(4000, Sleeper.getTimeSlept());
 	}
 

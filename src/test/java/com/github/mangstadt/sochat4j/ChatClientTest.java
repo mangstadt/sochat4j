@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -135,9 +134,7 @@ class ChatClientTest {
 
 		try (var client = new ChatClient(Site.STACKOVERFLOW, httpClient, ws)) {
 			client.login("email", "password");
-			client.joinRoom(1);
-			fail();
-		} catch (RoomNotFoundException expected) {
+			assertThrows(RoomNotFoundException.class, () -> client.joinRoom(1));
 		}
 
 		verifyNumberOfRequestsSent(httpClient, 4);
@@ -157,9 +154,7 @@ class ChatClientTest {
 
 		try (var client = new ChatClient(Site.STACKOVERFLOW, httpClient, ws)) {
 			client.login("email", "password");
-			client.joinRoom(1);
-			fail();
-		} catch (PrivateRoomException expected) {
+			assertThrows(PrivateRoomException.class, () -> client.joinRoom(1));
 		}
 
 		verifyNumberOfRequestsSent(httpClient, 4);
@@ -179,9 +174,7 @@ class ChatClientTest {
 
 		try (var client = new ChatClient(Site.STACKOVERFLOW, httpClient, ws)) {
 			client.login("email", "password");
-			client.joinRoom(1);
-			fail();
-		} catch (IOException expected) {
+			assertThrows(IOException.class, () -> client.joinRoom(1));
 		}
 
 		verifyNumberOfRequestsSent(httpClient, 4);
@@ -301,12 +294,7 @@ class ChatClientTest {
 
 			var room = client.joinRoom(1);
 			assertFalse(room.canPost());
-
-			try {
-				room.sendMessage("test");
-				fail();
-			} catch (RoomPermissionException expected) {
-			}
+			assertThrows(RoomPermissionException.class, () -> room.sendMessage("test"));
 		}
 
 		verify(session).close();
@@ -422,12 +410,7 @@ class ChatClientTest {
 		var ws = mock(WebSocketContainer.class);
 
 		var client = new ChatClient(Site.STACKOVERFLOW, httpClient, ws);
-
-		try {
-			client.getOriginalMessageContent(1234);
-			fail();
-		} catch (IOException expected) {
-		}
+		assertThrows(IOException.class, () -> client.getOriginalMessageContent(1234));
 	}
 
 	@Test

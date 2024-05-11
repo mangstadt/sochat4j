@@ -367,7 +367,7 @@ class ChatClientTest {
 
 	@Test
 	@SuppressWarnings("resource")
-	public void getMessageContent() throws Exception {
+	void getMessageContent() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()	
 			//login not required
@@ -388,7 +388,7 @@ class ChatClientTest {
 
 	@Test
 	@SuppressWarnings("resource")
-	public void getOriginalMessageContent() throws Exception {
+	void getOriginalMessageContent() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()	
 			//login not required
@@ -409,7 +409,7 @@ class ChatClientTest {
 
 	@Test
 	@SuppressWarnings("resource")
-	public void getOriginalMessageContent_bad_response() throws Exception {
+	void getOriginalMessageContent_bad_response() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()	
 			//login not required

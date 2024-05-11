@@ -33,19 +33,19 @@ import com.github.mangstadt.sochat4j.util.Http.Response;
  * @author Michael Angstadt
  */
 @SuppressWarnings("resource")
-public class HttpTest {
+class HttpTest {
 	@BeforeEach
-	public void before() {
+	void before() {
 		Sleeper.startUnitTest();
 	}
 
 	@AfterEach
-	public void after() {
+	void after() {
 		Sleeper.endUnitTest();
 	}
 
 	@Test
-	public void response_plaintext() throws Exception {
+	void response_plaintext() throws Exception {
 		var r = mockResponse(200, "The body");
 		var client = mock(CloseableHttpClient.class);
 		when(client.execute(any(HttpUriRequest.class))).thenReturn(r);
@@ -65,7 +65,7 @@ public class HttpTest {
 	}
 
 	@Test
-	public void response_json() throws Exception {
+	void response_json() throws Exception {
 		var r = mockResponse(200, "{}");
 		var client = mock(CloseableHttpClient.class);
 		when(client.execute(any(HttpUriRequest.class))).thenReturn(r);
@@ -80,7 +80,7 @@ public class HttpTest {
 	}
 
 	@Test
-	public void response_html() throws Exception {
+	void response_html() throws Exception {
 		var r = mockResponse(200, "<html><a href=\"foo.html\">link</a></html>");
 		var client = mock(CloseableHttpClient.class);
 		when(client.execute(any(HttpUriRequest.class))).thenReturn(r);
@@ -109,7 +109,7 @@ public class HttpTest {
 	 * Vararg parameter must have an even number of arguments.
 	 */
 	@Test
-	public void post_parameters_odd() throws Exception {
+	void post_parameters_odd() throws Exception {
 		var http = new Http(mock(CloseableHttpClient.class));
 		assertThrows(IllegalArgumentException.class, () -> http.post("uri", "one"));
 	}
@@ -118,7 +118,7 @@ public class HttpTest {
 	 * Vararg parameter may be empty.
 	 */
 	@Test
-	public void post_parameters_none() throws Exception {
+	void post_parameters_none() throws Exception {
 		var client = mock(CloseableHttpClient.class);
 		when(client.execute(any(HttpUriRequest.class))).then(invocation -> {
 			var request = (HttpPost) invocation.getArguments()[0];
@@ -135,7 +135,7 @@ public class HttpTest {
 	 * Parameter names cannot be null.
 	 */
 	@Test
-	public void post_parameters_null_name() throws Exception {
+	void post_parameters_null_name() throws Exception {
 		var http = new Http(mock(CloseableHttpClient.class));
 		assertThrows(NullPointerException.class, () -> http.post("uri", (String) null, "value"));
 	}
@@ -144,7 +144,7 @@ public class HttpTest {
 	 * Parameter values may be null.
 	 */
 	@Test
-	public void post_parameters_null_value() throws Exception {
+	void post_parameters_null_value() throws Exception {
 		var client = mock(CloseableHttpClient.class);
 		when(client.execute(any(HttpUriRequest.class))).then(invocation -> {
 			var request = (HttpPost) invocation.getArguments()[0];
@@ -160,7 +160,7 @@ public class HttpTest {
 	}
 
 	@Test
-	public void rate_limit_handler() throws Exception {
+	void rate_limit_handler() throws Exception {
 		var response1 = mockResponse(400, "");
 		var response2 = mockResponse(200, "");
 
@@ -178,7 +178,7 @@ public class HttpTest {
 	}
 
 	@Test
-	public void rate_limit_handler_give_up() throws Exception {
+	void rate_limit_handler_give_up() throws Exception {
 		var response1 = mockResponse(400, "");
 		var response2 = mockResponse(400, "");
 		var response3 = mockResponse(400, "");

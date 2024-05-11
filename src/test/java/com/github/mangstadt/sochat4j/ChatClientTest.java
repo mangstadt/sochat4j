@@ -34,9 +34,9 @@ import jakarta.websocket.WebSocketContainer;
 /**
  * @author Michael Angstadt
  */
-public class ChatClientTest {
+class ChatClientTest {
 	@Test
-	public void user_info_cant_find_on_homepage() throws Exception {
+	void user_info_cant_find_on_homepage() throws Exception {
 		for (Site site : Site.values()) {
 			//@formatter:off
 			var httpClient = new MockHttpClientBuilder()
@@ -69,7 +69,7 @@ public class ChatClientTest {
 	}
 
 	@Test
-	public void user_info() throws Exception {
+	void user_info() throws Exception {
 		for (Site site : Site.values()) {
 			//@formatter:off
 			var httpClient = new MockHttpClientBuilder()
@@ -92,7 +92,7 @@ public class ChatClientTest {
 
 	@SuppressWarnings("resource")
 	@Test
-	public void joinRoom_not_logged_in() throws Exception {
+	void joinRoom_not_logged_in() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 		.build();
@@ -106,7 +106,7 @@ public class ChatClientTest {
 	}
 
 	@Test
-	public void getRoom_has_not_been_joined() throws Exception {
+	void getRoom_has_not_been_joined() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 		.build();
@@ -122,7 +122,7 @@ public class ChatClientTest {
 	}
 
 	@Test
-	public void joinRoom_not_found() throws Exception {
+	void joinRoom_not_found() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -144,7 +144,7 @@ public class ChatClientTest {
 	}
 
 	@Test
-	public void joinRoom_private() throws Exception {
+	void joinRoom_private() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -166,7 +166,7 @@ public class ChatClientTest {
 	}
 
 	@Test
-	public void joinRoom_no_fkey() throws Exception {
+	void joinRoom_no_fkey() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -188,7 +188,7 @@ public class ChatClientTest {
 	}
 
 	@Test
-	public void joinRoom() throws Exception {
+	void joinRoom() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -254,7 +254,7 @@ public class ChatClientTest {
 	}
 
 	@Test
-	public void joinRoom_cannot_post() throws Exception {
+	void joinRoom_cannot_post() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -314,7 +314,7 @@ public class ChatClientTest {
 	}
 
 	@Test
-	public void joinRoom_that_has_no_messages() throws Exception {
+	void joinRoom_that_has_no_messages() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -431,7 +431,7 @@ public class ChatClientTest {
 	}
 
 	@Test
-	public void leave_room() throws Exception {
+	void leave_room() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)

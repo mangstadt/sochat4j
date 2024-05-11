@@ -9,9 +9,9 @@ import org.junit.jupiter.api.Test;
 /**
  * @author Michael Angstadt
  */
-public class SplitStrategyTest {
+class SplitStrategyTest {
 	@Test
-	public void no_max_length() {
+	void no_max_length() {
 		for (SplitStrategy strategy : SplitStrategy.values()) {
 			var actual = strategy.split("message", -1);
 			var expected = List.of("message");
@@ -20,7 +20,7 @@ public class SplitStrategyTest {
 	}
 
 	@Test
-	public void message_does_not_exceed_max_length() {
+	void message_does_not_exceed_max_length() {
 		for (SplitStrategy strategy : SplitStrategy.values()) {
 			var actual = strategy.split("message", 50);
 			var expected = List.of("message");
@@ -29,7 +29,7 @@ public class SplitStrategyTest {
 	}
 
 	@Test
-	public void word() {
+	void word() {
 		var actual = SplitStrategy.WORD.split("Java is a general-purpose computer programming language that is concurrent, class-based, object-oriented, and specifically designed to have as few implementation dependencies as possible.", 100);
 		//@formatter:off
 		var expected = List.of(
@@ -42,7 +42,7 @@ public class SplitStrategyTest {
 	}
 
 	@Test
-	public void word_markdown() {
+	void word_markdown() {
 		var actual = SplitStrategy.WORD.split("Java is a general-purpose computer programming language that is concurrent, class-based, object-oriented, and specifically designed to have **as few implementation dependencies as possible**.", 100);
 		//@formatter:off
 		var expected = List.of(
@@ -55,7 +55,7 @@ public class SplitStrategyTest {
 	}
 
 	@Test
-	public void word_with_markdown_section_that_exceeds_max_length() {
+	void word_with_markdown_section_that_exceeds_max_length() {
 		var actual = SplitStrategy.WORD.split("Java is a general-purpose computer programming language that is concurrent, class-based, object-oriented, and specifically designed to have **as few implementation dependencies as possible**.", 30);
 		//@formatter:off
 		var expected = List.of(
@@ -75,7 +75,7 @@ public class SplitStrategyTest {
 	}
 
 	@Test
-	public void newline() {
+	void newline() {
 		var actual = SplitStrategy.NEWLINE.split("Java is a general-purpose computer programming language that is\nconcurrent, class-based, object-oriented, and specifically designed to have as few implementation dependencies as possible.", 100);
 		//@formatter:off
 		var expected = List.of(

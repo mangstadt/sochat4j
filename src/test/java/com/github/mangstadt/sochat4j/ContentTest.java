@@ -11,9 +11,9 @@ import org.junit.jupiter.api.Test;
 /**
  * @author Michael Angstadt
  */
-public class ContentTest {
+class ContentTest {
 	@Test
-	public void getMentions() {
+	void getMentions() {
 		assertMention("Hello, @Frank.", "Frank");
 		assertMention("Hello, @Frank2Cool.", "Frank2Cool");
 		assertMention("Hello@Frank.", "Frank");
@@ -30,7 +30,7 @@ public class ContentTest {
 	}
 
 	@Test
-	public void isMentioned() {
+	void isMentioned() {
 		assertIsMentioned("Hello, @FrankSmi", "frank smith", true);
 		assertIsMentioned("Hello", "frank smith", false);
 		assertIsMentioned("Hello, @FrankSmi", "bob", false);
@@ -42,7 +42,7 @@ public class ContentTest {
 	}
 
 	@Test
-	public void isOnebox() {
+	void isOnebox() {
 		var content = new Content("<div class=\"foooneboxbar\">onebox</div>", false);
 		assertTrue(content.isOnebox());
 
@@ -51,7 +51,7 @@ public class ContentTest {
 	}
 
 	@Test
-	public void parse() {
+	void parse() {
 		var content = Content.parse("one\ntwo");
 		assertFalse(content.isFixedWidthFont());
 		assertEquals("one\ntwo", content.getContent());

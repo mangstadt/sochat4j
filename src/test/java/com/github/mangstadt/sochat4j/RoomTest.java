@@ -48,13 +48,13 @@ import jakarta.websocket.WebSocketContainer;
  * @author Michael Angstadt
  */
 @SuppressWarnings("resource")
-public class RoomTest {
+class RoomTest {
 	/**
 	 * Anything that is not JSON or that doesn't have the proper JSON fields
 	 * should be silently ignored.
 	 */
 	@Test
-	public void webSocket_ignore_bad_data() throws Exception {
+	void webSocket_ignore_bad_data() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -82,7 +82,7 @@ public class RoomTest {
 	}
 
 	@Test
-	public void webSocket_MessagePostedEvent() throws Exception {
+	void webSocket_MessagePostedEvent() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -129,7 +129,7 @@ public class RoomTest {
 	}
 
 	@Test
-	public void webSocket_MessagePostedEvent_reply() throws Exception {
+	void webSocket_MessagePostedEvent_reply() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -195,7 +195,7 @@ public class RoomTest {
 	}
 
 	@Test
-	public void webSocket_MessagePostedEvent_mention() throws Exception {
+	void webSocket_MessagePostedEvent_mention() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -261,7 +261,7 @@ public class RoomTest {
 	}
 
 	@Test
-	public void webSocket_MessageEditedEvent() throws Exception {
+	void webSocket_MessageEditedEvent() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -308,7 +308,7 @@ public class RoomTest {
 	}
 
 	@Test
-	public void webSocket_MessageStarredEvent() throws Exception {
+	void webSocket_MessageStarredEvent() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -355,7 +355,7 @@ public class RoomTest {
 	}
 
 	@Test
-	public void webSocket_MessageDeletedEvent() throws Exception {
+	void webSocket_MessageDeletedEvent() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -402,7 +402,7 @@ public class RoomTest {
 	}
 
 	@Test
-	public void webSocket_MessagesMovedEvent_out() throws Exception {
+	void webSocket_MessagesMovedEvent_out() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -489,7 +489,7 @@ public class RoomTest {
 	}
 
 	@Test
-	public void webSocket_MessagesMovedEvent_in() throws Exception {
+	void webSocket_MessagesMovedEvent_in() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -576,7 +576,7 @@ public class RoomTest {
 	}
 
 	@Test
-	public void webSocket_UserEnteredEvent() throws Exception {
+	void webSocket_UserEnteredEvent() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -616,7 +616,7 @@ public class RoomTest {
 	}
 
 	@Test
-	public void webSocket_UserLeftEvent() throws Exception {
+	void webSocket_UserLeftEvent() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -656,7 +656,7 @@ public class RoomTest {
 	}
 
 	@Test
-	public void webSocket_ignore_events_from_other_rooms() throws Exception {
+	void webSocket_ignore_events_from_other_rooms() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -705,7 +705,7 @@ public class RoomTest {
 	}
 
 	@Test
-	public void webSocket_listen_for_all_events() throws Exception {
+	void webSocket_listen_for_all_events() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -779,7 +779,7 @@ public class RoomTest {
 	}
 
 	@Test
-	public void getMessages() throws Exception {
+	void getMessages() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -851,7 +851,7 @@ public class RoomTest {
 	}
 
 	@Test
-	public void getMessages_bad_responses() throws Exception {
+	void getMessages_bad_responses() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -920,7 +920,7 @@ public class RoomTest {
 	}
 
 	@Test
-	public void sendMessage() throws Exception {
+	void sendMessage() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -945,7 +945,7 @@ public class RoomTest {
 	}
 
 	@Test
-	public void sendMessage_split_strategy() throws Exception {
+	void sendMessage_split_strategy() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -989,7 +989,7 @@ public class RoomTest {
 	}
 
 	@Test
-	public void sendMessage_posting_too_fast() throws Exception {
+	void sendMessage_posting_too_fast() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -1029,17 +1029,17 @@ public class RoomTest {
 	}
 
 	@Test
-	public void sendMessage_posting_too_fast_cant_parse_wait_time() throws Exception {
+	void sendMessage_posting_too_fast_cant_parse_wait_time() throws Exception {
 		//TODO
 	}
 
 	@Test
-	public void sendMessage_posting_too_fast_give_up() throws Exception {
+	void sendMessage_posting_too_fast_give_up() throws Exception {
 		//TODO
 	}
 
 	@Test
-	public void sendMessage_permission_problem() throws Exception {
+	void sendMessage_permission_problem() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -1081,7 +1081,7 @@ public class RoomTest {
 	}
 
 	@Test
-	public void sendMessage_bad_responses() throws Exception {
+	void sendMessage_bad_responses() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -1138,7 +1138,7 @@ public class RoomTest {
 	}
 
 	@Test
-	public void editMessage() throws Exception {
+	void editMessage() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -1217,7 +1217,7 @@ public class RoomTest {
 	}
 
 	@Test
-	public void deleteMessage() throws Exception {
+	void deleteMessage() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -1288,7 +1288,7 @@ public class RoomTest {
 	}
 
 	@Test
-	public void getPingableUsers() throws Exception {
+	void getPingableUsers() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -1330,7 +1330,7 @@ public class RoomTest {
 	}
 
 	@Test
-	public void getPingableUsers_bad_responses() throws Exception {
+	void getPingableUsers_bad_responses() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -1379,7 +1379,7 @@ public class RoomTest {
 	}
 
 	@Test
-	public void getUserInfo() throws Exception {
+	void getUserInfo() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -1432,7 +1432,7 @@ public class RoomTest {
 	}
 
 	@Test
-	public void getUserInfo_bad_responses() throws Exception {
+	void getUserInfo_bad_responses() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -1495,7 +1495,7 @@ public class RoomTest {
 	}
 
 	@Test
-	public void getRoomInfo() throws Exception {
+	void getRoomInfo() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -1528,7 +1528,7 @@ public class RoomTest {
 	}
 
 	@Test
-	public void getRoomInfo_bad_responses() throws Exception {
+	void getRoomInfo_bad_responses() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
 			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
@@ -1594,7 +1594,7 @@ public class RoomTest {
 	 * @see ChatClientTest#leave_room
 	 */
 	@Test
-	public void leave() throws Exception {
+	void leave() throws Exception {
 		//empty
 	}
 

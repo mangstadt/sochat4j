@@ -4,17 +4,17 @@ SOChat4j is a general-purpose Java library for interacting with [Stack Overflow 
 
 # Requirements
 
-* Java 11
+* Java 17
 * [Maven](http://maven.apache.org) (for building)
 
 # Example
 
 ```java
-String email = "email@example.com";
-String password = "password";
+var email = "email@example.com";
+var password = "password";
 
 try (IChatClient client = ChatClient.connect(Site.STACKOVERFLOW, email, password)) {
-  IRoom room = client.joinRoom(1);
+  var room = client.joinRoom(1);
 
   room.addEventListener(UserEnteredEvent.class, event -> {
     try {
@@ -35,7 +35,7 @@ try (IChatClient client = ChatClient.connect(Site.STACKOVERFLOW, email, password
   room.sendMessage("WelcomeBot Online!");
 
   System.out.println("Press Enter to terminate the bot.");
-  try (BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
+  try (var reader = new BufferedReader(new InputStreamReader(System.in))) {
     reader.readLine();
   }
 

@@ -63,7 +63,6 @@ public class Room implements IRoom {
 
 	private static final int MAX_WEBSOCKET_REFRESH_ATTEMPTS = 3;
 	private static final Duration PAUSE_BETWEEN_WEBSOCKET_REFRESH_ATTEMPTS = Duration.ofSeconds(10);
-	private static final Duration WEBSOCKET_REFRESH_FREQUENCY = Duration.ofHours(8);
 
 	private final int roomId;
 	private final String fkey;
@@ -72,6 +71,7 @@ public class Room implements IRoom {
 	private final ChatClient chatClient;
 
 	private final WebSocketContainer webSocketContainer;
+	private final Duration webSocketRefreshFrequency;
 	private Session webSocketSession;
 	private final Timer websocketReconnectTimer;
 
@@ -96,6 +96,8 @@ public class Room implements IRoom {
 	 * @param http the HTTP client
 	 * @param webSocketContainer the object used to create the web socket
 	 * connection
+	 * @param webSocketRefreshFrequency how often the room's web socket
+	 * connection is reset to address disconnects that randomly occur
 	 * @param chatClient the {@link ChatClient} object that created this
 	 * connection
 	 * @throws IOException if there's a network problem
@@ -104,10 +106,11 @@ public class Room implements IRoom {
 	 * @throws PrivateRoomException if the room can't be joined because it is
 	 * private
 	 */
-	Room(int roomId, Http http, WebSocketContainer webSocketContainer, ChatClient chatClient) throws IOException, RoomNotFoundException, PrivateRoomException {
+	Room(int roomId, Http http, WebSocketContainer webSocketContainer, Duration webSocketRefreshFrequency, ChatClient chatClient) throws IOException, RoomNotFoundException, PrivateRoomException {
 		this.roomId = roomId;
 		this.http = http;
 		this.webSocketContainer = webSocketContainer;
+		this.webSocketRefreshFrequency = webSocketRefreshFrequency;
 		this.chatClient = chatClient;
 		websocketReconnectTimer = new Timer(true);
 
@@ -140,7 +143,9 @@ public class Room implements IRoom {
 		canPost = (dom.getElementById("input") != null);
 
 		connectToWebSocket();
-		createWebSocketRefreshTimer();
+		if (webSocketRefreshFrequency != null) {
+			createWebSocketRefreshTimer();
+		}
 	}
 
 	private boolean roomDoesNotExist(Http.Response response) {
@@ -186,7 +191,7 @@ public class Room implements IRoom {
 
 				@Override
 				public void onError(Session session, Throwable t) {
-					logger.log(Level.SEVERE, t, () -> "Problem with web socket [room=" + roomId + "]. Leaving room.");
+					logger.log(Level.SEVERE, t, () -> "[room=" + roomId + "]: Problem with web socket. Leaving room.");
 					leave();
 				}
 
@@ -194,7 +199,7 @@ public class Room implements IRoom {
 				public void onClose(Session session, CloseReason reason) {
 					var phrase = reason.getReasonPhrase();
 					var code = (reason.getCloseCode() == null) ? null : reason.getCloseCode().getCode();
-					logger.log(Level.SEVERE, () -> "Web socket closed [room=" + roomId + ", reasonPhrase=" + phrase + ", reasonCode=" + code + "].");
+					logger.log(Level.SEVERE, () -> "[room=" + roomId + "]: Web socket closed. Reason phrase=" + phrase + ". Code=" + code);
 				}
 			}, config, wsUri);
 		} catch (DeploymentException e) {
@@ -210,7 +215,7 @@ public class Room implements IRoom {
 	 * will stop responding to messages.
 	 */
 	private void createWebSocketRefreshTimer() {
-		var period = WEBSOCKET_REFRESH_FREQUENCY.toMillis();
+		var period = webSocketRefreshFrequency.toMillis();
 		websocketReconnectTimer.schedule(new TimerTask() {
 			@Override
 			public void run() {

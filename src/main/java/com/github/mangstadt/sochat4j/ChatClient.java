@@ -3,6 +3,7 @@ package com.github.mangstadt.sochat4j;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -42,6 +43,7 @@ public class ChatClient implements IChatClient {
 	private final Http http;
 	private final WebSocketContainer webSocketClient;
 	private final Site site;
+	private final Duration webSocketRefreshFrequency;
 	private final Map<Integer, Room> rooms = new LinkedHashMap<>();
 	private boolean loggedIn = false;
 	private String username;
@@ -66,7 +68,7 @@ public class ChatClient implements IChatClient {
 		 * Solution: https://stackoverflow.com/q/36473478/13379
 		 */
 		//@formatter:off
-		var httpClient = HttpClients.custom() 
+		var httpClient = HttpClients.custom()
 			.setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build())
 		.build();
 		//@formatter:on
@@ -75,7 +77,7 @@ public class ChatClient implements IChatClient {
 		webSocketClient.setDefaultMaxSessionIdleTimeout(0);
 		webSocketClient.getProperties().put(ClientProperties.RETRY_AFTER_SERVICE_UNAVAILABLE, true);
 
-		var client = new ChatClient(site, httpClient, webSocketClient);
+		var client = new ChatClient(site, httpClient, webSocketClient, Duration.ofHours(4));
 		client.login(email, password);
 		return client;
 	}
@@ -88,9 +90,23 @@ public class ChatClient implements IChatClient {
 	 * @param webSocketClient the web socket client
 	 */
 	public ChatClient(Site site, CloseableHttpClient httpClient, WebSocketContainer webSocketClient) {
+		this(site, httpClient, webSocketClient, null);
+	}
+
+	/**
+	 * Creates a connection to a chat site. The connection is not established
+	 * until {@link #login} is called.
+	 * @param site the site to connect to
+	 * @param httpClient the HTTP client
+	 * @param webSocketClient the web socket client
+	 * @param webSocketRefreshFrequency how often each room's web socket
+	 * connection is reset to address disconnects that randomly occur
+	 */
+	public ChatClient(Site site, CloseableHttpClient httpClient, WebSocketContainer webSocketClient, Duration webSocketRefreshFrequency) {
 		this.http = new Http(httpClient);
 		this.webSocketClient = requireNonNull(webSocketClient);
 		this.site = requireNonNull(site);
+		this.webSocketRefreshFrequency = webSocketRefreshFrequency;
 	}
 
 	@Override
@@ -192,7 +208,7 @@ public class ChatClient implements IChatClient {
 				return room;
 			}
 
-			room = new Room(roomId, http, webSocketClient, this);
+			room = new Room(roomId, http, webSocketClient, webSocketRefreshFrequency, this);
 			rooms.put(roomId, room);
 
 			return room;

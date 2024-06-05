@@ -44,6 +44,7 @@ import com.github.mangstadt.sochat4j.util.Sleeper;
 
 import jakarta.websocket.ClientEndpointConfig;
 import jakarta.websocket.ClientEndpointConfig.Configurator;
+import jakarta.websocket.CloseReason;
 import jakarta.websocket.DeploymentException;
 import jakarta.websocket.Endpoint;
 import jakarta.websocket.EndpointConfig;
@@ -187,6 +188,13 @@ public class Room implements IRoom {
 				public void onError(Session session, Throwable t) {
 					logger.log(Level.SEVERE, t, () -> "Problem with web socket [room=" + roomId + "]. Leaving room.");
 					leave();
+				}
+
+				@Override
+				public void onClose(Session session, CloseReason reason) {
+					var phrase = reason.getReasonPhrase();
+					var code = (reason.getCloseCode() == null) ? null : reason.getCloseCode().getCode();
+					logger.log(Level.SEVERE, () -> "Web socket closed [room=" + roomId + ", reasonPhrase=" + phrase + ", reasonCode=" + code + "].");
 				}
 			}, config, wsUri);
 		} catch (DeploymentException e) {
@@ -346,7 +354,7 @@ public class Room implements IRoom {
 		synchronized (genericListeners) {
 			genericListeners.forEach(listener -> eventsToPublish.forEach(listener::accept));
 		}
-		
+
 		eventsToPublish.forEach(event -> {
 			var eventListeners = listeners.get(event.getClass());
 			synchronized (eventListeners) {

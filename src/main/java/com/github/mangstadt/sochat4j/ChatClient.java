@@ -59,6 +59,22 @@ public class ChatClient implements IChatClient {
 	 * @throws IOException if there's a network problem
 	 */
 	public static ChatClient connect(Site site, String email, String password) throws InvalidCredentialsException, IOException {
+		return connect(site, email, password, null);
+	}
+
+	/**
+	 * Connects to a chat site.
+	 * @param site the chat site
+	 * @param email the login email
+	 * @param password the login password
+	 * @param webSocketRefreshInterval how often each room's web socket
+	 * connection is refreshed (a workaround to resolve random disconnects), or
+	 * null to never refresh
+	 * @return the chat client
+	 * @throws InvalidCredentialsException if the credentials are bad
+	 * @throws IOException if there's a network problem
+	 */
+	public static ChatClient connect(Site site, String email, String password, Duration webSocketRefreshInterval) throws InvalidCredentialsException, IOException {
 		/*
 		 * 4/2/2020: You cannot just call HttpClients.createDefault(). When this
 		 * method is used, Apache's HTTP library does not properly parse the
@@ -77,7 +93,7 @@ public class ChatClient implements IChatClient {
 		webSocketClient.setDefaultMaxSessionIdleTimeout(0);
 		webSocketClient.getProperties().put(ClientProperties.RETRY_AFTER_SERVICE_UNAVAILABLE, true);
 
-		var client = new ChatClient(site, httpClient, webSocketClient, Duration.ofHours(4));
+		var client = new ChatClient(site, httpClient, webSocketClient, webSocketRefreshInterval);
 		client.login(email, password);
 		return client;
 	}

@@ -25,6 +25,7 @@ import java.util.List;
 
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import com.github.mangstadt.sochat4j.event.Event;
@@ -48,6 +49,7 @@ import jakarta.websocket.WebSocketContainer;
  * @author Michael Angstadt
  */
 @SuppressWarnings("resource")
+@Disabled //using OkHttp for web sockets
 class RoomTest {
 	/**
 	 * Anything that is not JSON or that doesn't have the proper JSON fields

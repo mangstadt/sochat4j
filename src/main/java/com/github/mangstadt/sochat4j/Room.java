@@ -3,7 +3,6 @@ package com.github.mangstadt.sochat4j;
 import static java.util.function.Function.identity;
 
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.ZoneOffset;
@@ -42,14 +41,12 @@ import com.github.mangstadt.sochat4j.util.Http.Response;
 import com.github.mangstadt.sochat4j.util.JsonUtils;
 import com.github.mangstadt.sochat4j.util.Sleeper;
 
-import jakarta.websocket.ClientEndpointConfig;
-import jakarta.websocket.ClientEndpointConfig.Configurator;
-import jakarta.websocket.CloseReason;
-import jakarta.websocket.DeploymentException;
-import jakarta.websocket.Endpoint;
-import jakarta.websocket.EndpointConfig;
-import jakarta.websocket.Session;
 import jakarta.websocket.WebSocketContainer;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.WebSocket;
+import okhttp3.WebSocketListener;
 
 /**
  * Represents the connection to a room the user has joined. Use the
@@ -64,15 +61,17 @@ public class Room implements IRoom {
 	private static final int MAX_WEBSOCKET_REFRESH_ATTEMPTS = 3;
 	private static final Duration PAUSE_BETWEEN_WEBSOCKET_REFRESH_ATTEMPTS = Duration.ofSeconds(10);
 
+	private static final int CLOSE_NORMAL = 1000;
+	private static final int CLOSE_GOING_AWAY = 1001;
+
 	private final int roomId;
 	private final String fkey;
 	private final boolean canPost;
 	private final Http http;
 	private final ChatClient chatClient;
+	private WebSocket webSocket;
 
-	private final WebSocketContainer webSocketContainer;
 	private final Duration webSocketRefreshFrequency;
-	private Session webSocketSession;
 	private final Timer websocketReconnectTimer;
 
 	//@formatter:off
@@ -109,14 +108,13 @@ public class Room implements IRoom {
 	Room(int roomId, Http http, WebSocketContainer webSocketContainer, Duration webSocketRefreshFrequency, ChatClient chatClient) throws IOException, RoomNotFoundException, PrivateRoomException {
 		this.roomId = roomId;
 		this.http = http;
-		this.webSocketContainer = webSocketContainer;
 		this.webSocketRefreshFrequency = webSocketRefreshFrequency;
 		this.chatClient = chatClient;
 		websocketReconnectTimer = new Timer(true);
 
 		//@formatter:off
-		var url = baseUri()
-			.setPathSegments("rooms", Integer.toString(roomId))
+		var url = baseUrl()
+			.addPathSegments("rooms/" + roomId)
 		.toString();
 		//@formatter:on
 
@@ -166,45 +164,42 @@ public class Room implements IRoom {
 	}
 
 	private void connectToWebSocket() throws IOException {
-		var wsUri = getWebSocketUrl();
-
-		//@formatter:off
-		var config = ClientEndpointConfig.Builder.create()
-			.configurator(new Configurator() {
-				@Override
-				public void beforeRequest(Map<String, List<String>> headers) {
-					var origin = baseUri().toString();
-					headers.put("Origin", List.of(origin));
-				}
-			})
-		.build();
-		//@formatter:on
+		var wsUri = getWebSocketUri();
 
 		logger.info(() -> "Connecting to web socket [room=" + roomId + "]: " + wsUri);
 
-		try {
-			webSocketSession = webSocketContainer.connectToServer(new Endpoint() {
-				@Override
-				public void onOpen(Session session, EndpointConfig config) {
-					session.addMessageHandler(String.class, Room.this::handleWebSocketMessage);
-				}
+		//@formatter:off
+		var request = new Request.Builder()
+			.url(wsUri)
+			.addHeader("Origin", baseUrl().toString())
+		.build();
+		//@formatter:on
 
-				@Override
-				public void onError(Session session, Throwable t) {
-					logger.log(Level.SEVERE, t, () -> "[room=" + roomId + "]: Problem with web socket. Leaving room.");
-					leave();
-				}
+		var okHttp = new OkHttpClient();
+		webSocket = okHttp.newWebSocket(request, new WebSocketListener() {
+			@Override
+			public void onMessage(WebSocket webSocket, String text) {
+				handleWebSocketMessage(text);
+			}
 
-				@Override
-				public void onClose(Session session, CloseReason reason) {
-					var phrase = reason.getReasonPhrase();
-					var code = (reason.getCloseCode() == null) ? null : reason.getCloseCode().getCode();
-					logger.log(Level.SEVERE, () -> "[room=" + roomId + "]: Web socket closed. Reason phrase=" + phrase + ". Code=" + code);
-				}
-			}, config, wsUri);
-		} catch (DeploymentException e) {
-			throw new IOException(e);
-		}
+			@Override
+			public void onFailure(WebSocket webSocket, Throwable t, okhttp3.Response response) {
+				logger.log(Level.SEVERE, t, () -> "[room=" + roomId + "]: Problem with web socket. Leaving room.");
+				leave();
+			}
+
+			@Override
+			public void onClosed(WebSocket webSocket, int code, String reason) {
+				//Invoked when both peers have indicated that no more messages will be transmitted and the connection has been successfully released.
+				logger.log(Level.SEVERE, () -> "[room=" + roomId + "]: Web socket closed. Reason=" + reason + ". Code=" + code);
+			}
+
+			@Override
+			public void onClosing(WebSocket webSocket, int code, String reason) {
+				//Invoked when the remote peer has indicated that no more incoming messages will be transmitted.
+				logger.log(Level.SEVERE, () -> "[room=" + roomId + "]: Web socket closed by server. Reason=" + reason + ". Code=" + code);
+			}
+		});
 
 		logger.info(() -> "Web socket connection successful [room=" + roomId + "]: " + wsUri);
 	}
@@ -222,11 +217,7 @@ public class Room implements IRoom {
 				synchronized (Room.this) {
 					logger.info(() -> "[room=" + roomId + "]: Recreating websocket connection.");
 
-					try {
-						webSocketSession.close();
-					} catch (IOException e) {
-						logger.log(Level.SEVERE, e, () -> "[room=" + roomId + "]: Problem closing existing websocket session.");
-					}
+					webSocket.close(CLOSE_NORMAL, "");
 
 					var connected = false;
 					var attempts = 0;
@@ -265,10 +256,10 @@ public class Room implements IRoom {
 		return canPost;
 	}
 
-	private URI getWebSocketUrl() throws IOException {
+	private String getWebSocketUri() throws IOException {
 		//@formatter:off
-		var url = baseUri()
-			.setPath("/ws-auth")
+		var url = baseUrl()
+			.addPathSegments("ws-auth")
 		.toString();
 		
 		var response = http.post(url,
@@ -288,11 +279,15 @@ public class Room implements IRoom {
 		var latest = messages.isEmpty() ? null : messages.get(0);
 		var time = (latest == null) ? 0 : latest.getTimestamp().toEpochSecond(ZoneOffset.UTC);
 
+		/*
+		 * HttpUrl.parse() returns null because the web socket URI has a
+		 * non-HTTP scheme.
+		 */
 		try {
 			//@formatter:off
 			return new URIBuilder(wsUrl)
 				.setParameter("l", Long.toString(time))
-			.build();
+			.toString();
 			//@formatter:on
 		} catch (URISyntaxException e) {
 			throw new IOException("Web socket URL is not a valid URI: " + wsUrl, e);
@@ -446,8 +441,8 @@ public class Room implements IRoom {
 		}
 
 		//@formatter:off
-		var url = baseUri()
-			.setPathSegments("chats", Integer.toString(roomId), "messages", "new")
+		var url = baseUrl()
+			.addPathSegments("chats/" + roomId + "/messages/new")
 		.toString();
 		//@formatter:on
 
@@ -489,8 +484,8 @@ public class Room implements IRoom {
 	@Override
 	public List<ChatMessage> getMessages(int count) throws IOException {
 		//@formatter:off
-		var url = baseUri()
-			.setPathSegments("chats", Integer.toString(roomId), "events")
+		var url = baseUrl()
+			.addPathSegments("chats/" + roomId + "/events")
 		.toString();
 
 		var response = http.post(url,
@@ -521,8 +516,8 @@ public class Room implements IRoom {
 	@Override
 	public void deleteMessage(long messageId) throws IOException {
 		//@formatter:off
-		var url = baseUri()
-			.setPathSegments("messages", Long.toString(messageId), "delete")
+		var url = baseUrl()
+			.addPathSegments("messages/" + messageId + "/delete")
 		.toString();
 
 		var response = http.post(url,
@@ -553,8 +548,8 @@ public class Room implements IRoom {
 	@Override
 	public void editMessage(long messageId, String updatedMessage) throws IOException {
 		//@formatter:off
-		var url = baseUri()
-			.setPathSegments("messages", Long.toString(messageId))
+		var url = baseUrl()
+			.addPathSegments("messages/" + messageId)
 		.toString();
 
 		var response = http.post(url, new RateLimit409Handler(),
@@ -588,8 +583,8 @@ public class Room implements IRoom {
 	@Override
 	public List<UserInfo> getUserInfo(List<Integer> userIds) throws IOException {
 		//@formatter:off
-		var url = baseUri()
-			.setPath("/user/info")
+		var url = baseUrl()
+			.addPathSegments("user/info")
 		.toString();
 
 		var idsCommaSeparated = userIds.stream()
@@ -680,8 +675,8 @@ public class Room implements IRoom {
 	@Override
 	public List<PingableUser> getPingableUsers() throws IOException {
 		//@formatter:off
-		var url = baseUri()
-			.setPathSegments("rooms", "pingable", Integer.toString(roomId))
+		var url = baseUrl()
+			.addPathSegments("rooms/pingable/" + roomId)
 		.toString();
 		//@formatter:on
 
@@ -710,8 +705,8 @@ public class Room implements IRoom {
 	@Override
 	public RoomInfo getRoomInfo() throws IOException {
 		//@formatter:off
-		var url = baseUri()
-			.setPathSegments("rooms", "thumbs", Integer.toString(roomId))
+		var url = baseUrl()
+			.addPathSegments("rooms/thumbs/" + roomId)
 		.toString();
 		//@formatter:on
 
@@ -755,8 +750,8 @@ public class Room implements IRoom {
 
 		try {
 			//@formatter:off
-			var url = baseUri()
-				.setPathSegments("chats", "leave", Integer.toString(roomId))
+			var url = baseUrl()
+				.addPathSegments("chats/leave/" + roomId)
 			.toString();
 
 			http.post(url,
@@ -783,11 +778,11 @@ public class Room implements IRoom {
 	 * Gets a builder for the base URI of this chat site.
 	 * @return the base URI (e.g. "https://chat.stackoverflow.com")
 	 */
-	private URIBuilder baseUri() {
+	private HttpUrl.Builder baseUrl() {
 		//@formatter:off
-		return new URIBuilder()
-			.setScheme("https")
-			.setHost(chatClient.getSite().getChatDomain());
+		return new HttpUrl.Builder()
+			.scheme("https")
+			.host(chatClient.getSite().getChatDomain());
 		//@formatter:on
 	}
 
@@ -795,7 +790,7 @@ public class Room implements IRoom {
 	public void close() throws IOException {
 		synchronized (this) {
 			websocketReconnectTimer.cancel();
-			webSocketSession.close();
+			webSocket.close(CLOSE_GOING_AWAY, "");
 		}
 	}
 

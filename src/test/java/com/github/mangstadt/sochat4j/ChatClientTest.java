@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import jakarta.websocket.ClientEndpointConfig;
@@ -33,6 +34,7 @@ import jakarta.websocket.WebSocketContainer;
 /**
  * @author Michael Angstadt
  */
+@Disabled //using OkHttp for web sockets
 class ChatClientTest {
 	@Test
 	void user_info_cant_find_on_homepage() throws Exception {

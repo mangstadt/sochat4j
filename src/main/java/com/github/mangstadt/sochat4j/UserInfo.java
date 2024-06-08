@@ -7,12 +7,15 @@ import java.time.LocalDateTime;
  * @author Michael Angstadt
  */
 public class UserInfo {
-	private final int userId, roomId;
+	private final int userId;
+	private final int roomId;
 	private final String username;
 	private final String profilePicture;
 	private final int reputation;
-	private final boolean moderator, owner;
-	private final LocalDateTime lastSeen, lastPost;
+	private final boolean moderator;
+	private final boolean owner;
+	private final LocalDateTime lastSeen;
+	private final LocalDateTime lastPost;
 
 	private UserInfo(Builder builder) {
 		userId = builder.userId;
@@ -109,12 +112,15 @@ public class UserInfo {
 	}
 
 	public static class Builder {
-		private int userId, roomId;
+		private int userId;
+		private int roomId;
 		private String username;
 		private String profilePicture;
 		private int reputation;
-		private boolean moderator, owner;
-		private LocalDateTime lastSeen, lastPost;
+		private boolean moderator;
+		private boolean owner;
+		private LocalDateTime lastSeen;
+		private LocalDateTime lastPost;
 
 		public Builder userId(int userId) {
 			this.userId = userId;

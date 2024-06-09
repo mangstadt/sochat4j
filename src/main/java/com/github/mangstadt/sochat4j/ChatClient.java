@@ -21,14 +21,11 @@ import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
-import org.glassfish.tyrus.client.ClientManager;
-import org.glassfish.tyrus.client.ClientProperties;
-import org.glassfish.tyrus.container.jdk.client.JdkClientContainer;
 import org.jsoup.nodes.Document;
 
 import com.github.mangstadt.sochat4j.util.Http;
-
-import jakarta.websocket.WebSocketContainer;
+import com.github.mangstadt.sochat4j.util.WebSocketClient;
+import com.github.mangstadt.sochat4j.util.WebSocketClientImpl;
 
 /**
  * A connection to a chat site. This class is thread-safe.
@@ -41,7 +38,7 @@ public class ChatClient implements IChatClient {
 	private static final Logger logger = Logger.getLogger(ChatClient.class.getName());
 
 	private final Http http;
-	private final WebSocketContainer webSocketClient;
+	private final WebSocketClient webSocketClient;
 	private final Site site;
 	private final Duration webSocketRefreshFrequency;
 	private final Map<Integer, Room> rooms = new LinkedHashMap<>();
@@ -89,9 +86,7 @@ public class ChatClient implements IChatClient {
 		.build();
 		//@formatter:on
 
-		var webSocketClient = ClientManager.createClient(JdkClientContainer.class.getName());
-		webSocketClient.setDefaultMaxSessionIdleTimeout(0);
-		webSocketClient.getProperties().put(ClientProperties.RETRY_AFTER_SERVICE_UNAVAILABLE, true);
+		var webSocketClient = new WebSocketClientImpl();
 
 		var client = new ChatClient(site, httpClient, webSocketClient, webSocketRefreshInterval);
 		client.login(email, password);
@@ -105,7 +100,7 @@ public class ChatClient implements IChatClient {
 	 * @param httpClient the HTTP client
 	 * @param webSocketClient the web socket client
 	 */
-	public ChatClient(Site site, CloseableHttpClient httpClient, WebSocketContainer webSocketClient) {
+	public ChatClient(Site site, CloseableHttpClient httpClient, WebSocketClient webSocketClient) {
 		this(site, httpClient, webSocketClient, null);
 	}
 
@@ -118,7 +113,7 @@ public class ChatClient implements IChatClient {
 	 * @param webSocketRefreshFrequency how often each room's web socket
 	 * connection is reset to address disconnects that randomly occur
 	 */
-	public ChatClient(Site site, CloseableHttpClient httpClient, WebSocketContainer webSocketClient, Duration webSocketRefreshFrequency) {
+	public ChatClient(Site site, CloseableHttpClient httpClient, WebSocketClient webSocketClient, Duration webSocketRefreshFrequency) {
 		this.http = new Http(httpClient);
 		this.webSocketClient = requireNonNull(webSocketClient);
 		this.site = requireNonNull(site);

@@ -6,16 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.net.URI;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -25,7 +19,6 @@ import java.util.List;
 
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import com.github.mangstadt.sochat4j.event.Event;
@@ -36,20 +29,13 @@ import com.github.mangstadt.sochat4j.event.MessageStarredEvent;
 import com.github.mangstadt.sochat4j.event.MessagesMovedEvent;
 import com.github.mangstadt.sochat4j.event.UserEnteredEvent;
 import com.github.mangstadt.sochat4j.event.UserLeftEvent;
+import com.github.mangstadt.sochat4j.util.MockWebSocketServer;
 import com.github.mangstadt.sochat4j.util.Sleeper;
-
-import jakarta.websocket.ClientEndpointConfig;
-import jakarta.websocket.Endpoint;
-import jakarta.websocket.EndpointConfig;
-import jakarta.websocket.MessageHandler.Whole;
-import jakarta.websocket.Session;
-import jakarta.websocket.WebSocketContainer;
 
 /**
  * @author Michael Angstadt
  */
 @SuppressWarnings("resource")
-@Disabled //using OkHttp for web sockets
 class RoomTest {
 	/**
 	 * Anything that is not JSON or that doesn't have the proper JSON fields
@@ -64,21 +50,88 @@ class RoomTest {
 		.build();
 		//@formatter:on
 
-		var wsContainer = mock(WebSocketContainer.class);
-		var wsRoom1 = new MockWebSocketServer(wsContainer, "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460));
+		var expectedWsUrl = "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460);
+		var wsServer = new MockWebSocketServer(Site.STACKOVERFLOW, expectedWsUrl);
+		var wsClient = wsServer.getClient();
 
-		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
+		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsClient);
 		chatClient.login("email", "password");
 		chatClient.joinRoom(1);
 
-		wsRoom1.send("not JSON"); //not JSON
-		wsRoom1.send("{\"r20\": {} }"); //this is not room 20
-		wsRoom1.send("{\"r1\": {} }"); //no "e" field
-		wsRoom1.send("{\"r1\": { \"e\": {} } }"); //"e" is not an array
-		wsRoom1.send("{\"r1\": { \"e\": [] } }"); //"e" field is empty
-		wsRoom1.send("{\"r1\": { \"e\": [ {} ] } }"); //no "event_type" field
-		wsRoom1.send("{\"r1\": { \"e\": [ {\"event_type\": \"invalid\"} ] } }"); //"event_type" field is not an integer
-		wsRoom1.send("{\"r1\": { \"e\": [ {\"event_type\": 9001} ] } }"); //"event_type" field has an unknown value
+		//@formatter:off
+		//not JSON
+		wsServer.send("not JSON");
+
+		//this is not room 20
+		wsServer.send("""
+		{
+			"r20": {}
+		}
+		""");
+		
+		//no "e" field
+		wsServer.send("""
+		{
+			"r1": {}
+		}
+		""");
+		
+		//"e" is not an array
+		wsServer.send("""
+		{
+			"r1":
+			{
+				"e": {}
+			}
+		}
+		""");
+		
+		//"e" field is empty
+		wsServer.send("""
+		{
+			"r1":
+			{
+				"e": []
+			}
+		}
+		""");
+		
+		//no "event_type" field
+		wsServer.send("""
+		{
+			"r1":
+			{
+				"e": [ {} ]
+			}
+		}
+		""");
+		
+		//"event_type" field is not an integer
+		wsServer.send("""
+		{
+			"r1":
+			{
+				"e":
+				[
+					{"event_type": "invalid"}
+				]
+			}
+		}
+		""");
+		
+		//"event_type" field has an unknown value
+		wsServer.send("""
+		{
+			"r1":
+			{
+				"e":
+				[
+					{"event_type": 9001}
+				]
+			}
+		}
+		""");
+		//@formatter:on
 
 		verifyNumberOfRequestsSent(httpClient, 6);
 	}
@@ -92,10 +145,11 @@ class RoomTest {
 		.build();
 		//@formatter:on
 
-		var wsContainer = mock(WebSocketContainer.class);
-		var wsRoom1 = new MockWebSocketServer(wsContainer, "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460));
+		var expectedWsUrl = "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460);
+		var wsServer = new MockWebSocketServer(Site.STACKOVERFLOW, expectedWsUrl);
+		var wsClient = wsServer.getClient();
 
-		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
+		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsClient);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
 
@@ -103,7 +157,7 @@ class RoomTest {
 		room.addEventListener(MessagePostedEvent.class, events::add);
 
 		//@formatter:off
-		wsRoom1.send(ResponseSamples.webSocket()
+		wsServer.send(ResponseSamples.webSocket()
 		.room(1, "Sandbox")
 			.newMessage().id(1).timestamp(1417041460).content("one").user(50, "User").messageId(20157245).done()
 		.build());
@@ -139,10 +193,11 @@ class RoomTest {
 		.build();
 		//@formatter:on
 
-		var wsContainer = mock(WebSocketContainer.class);
-		var wsRoom1 = new MockWebSocketServer(wsContainer, "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460));
+		var expectedWsUrl = "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460);
+		var wsServer = new MockWebSocketServer(Site.STACKOVERFLOW, expectedWsUrl);
+		var wsClient = wsServer.getClient();
 
-		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
+		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsClient);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
 
@@ -151,7 +206,7 @@ class RoomTest {
 		room.addEventListener(MessageEditedEvent.class, events::add);
 
 		//@formatter:off
-		wsRoom1.send(ResponseSamples.webSocket()
+		wsServer.send(ResponseSamples.webSocket()
 		.room(1, "Sandbox")
 			.reply().id(1).timestamp(1417041460).content("@Bob Howdy.").user(50, "User").targetUser(100).messageId(20157245).parentId(20157230).done()
 			.newMessage().id(2).timestamp(1417041460).content("@Bob Howdy.").user(50, "User").messageId(20157245).parentId(20157230).done()
@@ -205,10 +260,11 @@ class RoomTest {
 		.build();
 		//@formatter:on
 
-		var wsContainer = mock(WebSocketContainer.class);
-		var wsRoom1 = new MockWebSocketServer(wsContainer, "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460));
+		var expectedWsUrl = "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460);
+		var wsServer = new MockWebSocketServer(Site.STACKOVERFLOW, expectedWsUrl);
+		var wsClient = wsServer.getClient();
 
-		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
+		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsClient);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
 
@@ -217,7 +273,7 @@ class RoomTest {
 		room.addEventListener(MessageEditedEvent.class, events::add);
 
 		//@formatter:off
-		wsRoom1.send(ResponseSamples.webSocket()
+		wsServer.send(ResponseSamples.webSocket()
 		.room(1, "Sandbox")
 			.mention().id(1).timestamp(1417041460).content("@Bob Howdy.").user(50, "User").targetUser(100).messageId(20157245).done()
 			.newMessage().id(2).timestamp(1417041460).content("@Bob Howdy.").user(50, "User").messageId(20157245).done()
@@ -271,10 +327,11 @@ class RoomTest {
 		.build();
 		//@formatter:on
 
-		var wsContainer = mock(WebSocketContainer.class);
-		var wsRoom1 = new MockWebSocketServer(wsContainer, "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460));
+		var expectedWsUrl = "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460);
+		var wsServer = new MockWebSocketServer(Site.STACKOVERFLOW, expectedWsUrl);
+		var wsClient = wsServer.getClient();
 
-		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
+		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsClient);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
 
@@ -282,7 +339,7 @@ class RoomTest {
 		room.addEventListener(MessageEditedEvent.class, events::add);
 
 		//@formatter:off
-		wsRoom1.send(ResponseSamples.webSocket()
+		wsServer.send(ResponseSamples.webSocket()
 		.room(1, "Sandbox")
 			.messageEdited().id(1).timestamp(1417041460).content("one").user(50, "User").messageId(20157245).edits(1).done()
 		.build());
@@ -318,10 +375,11 @@ class RoomTest {
 		.build();
 		//@formatter:on
 
-		var wsContainer = mock(WebSocketContainer.class);
-		var wsRoom1 = new MockWebSocketServer(wsContainer, "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460));
+		var expectedWsUrl = "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460);
+		var wsServer = new MockWebSocketServer(Site.STACKOVERFLOW, expectedWsUrl);
+		var wsClient = wsServer.getClient();
 
-		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
+		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsClient);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
 
@@ -329,7 +387,7 @@ class RoomTest {
 		room.addEventListener(MessageStarredEvent.class, events::add);
 
 		//@formatter:off
-		wsRoom1.send(ResponseSamples.webSocket()
+		wsServer.send(ResponseSamples.webSocket()
 		.room(1, "Sandbox")
 			.messageStarred().id(1).timestamp(1417041460).content("one").messageId(20157245).stars(1).done()
 		.build());
@@ -365,10 +423,11 @@ class RoomTest {
 		.build();
 		//@formatter:on
 
-		var wsContainer = mock(WebSocketContainer.class);
-		var wsRoom1 = new MockWebSocketServer(wsContainer, "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460));
+		var expectedWsUrl = "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460);
+		var wsServer = new MockWebSocketServer(Site.STACKOVERFLOW, expectedWsUrl);
+		var wsClient = wsServer.getClient();
 
-		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
+		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsClient);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
 
@@ -376,7 +435,7 @@ class RoomTest {
 		room.addEventListener(MessageDeletedEvent.class, events::add);
 
 		//@formatter:off
-		wsRoom1.send(ResponseSamples.webSocket()
+		wsServer.send(ResponseSamples.webSocket()
 		.room(1, "Sandbox")
 			.messageDeleted().id(1).timestamp(1417041460).user(50, "User").messageId(20157245).done()
 		.build());
@@ -412,10 +471,11 @@ class RoomTest {
 		.build();
 		//@formatter:on
 
-		var wsContainer = mock(WebSocketContainer.class);
-		var wsRoom1 = new MockWebSocketServer(wsContainer, "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460));
+		var expectedWsUrl = "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460);
+		var wsServer = new MockWebSocketServer(Site.STACKOVERFLOW, expectedWsUrl);
+		var wsClient = wsServer.getClient();
 
-		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
+		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsClient);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
 
@@ -423,7 +483,7 @@ class RoomTest {
 		room.addEventListener(MessagesMovedEvent.class, events::add);
 
 		//@formatter:off
-		wsRoom1.send(ResponseSamples.webSocket()
+		wsServer.send(ResponseSamples.webSocket()
 		.room(1, "Sandbox")
 			.movedOut().id(1).timestamp(1417041460).content("one").user(50, "User").messageId(20157245).moved().done()
 			.movedOut().id(2).timestamp(1417041470).content("two").user(50, "User").messageId(20157246).moved().done()
@@ -499,10 +559,11 @@ class RoomTest {
 		.build();
 		//@formatter:on
 
-		var wsContainer = mock(WebSocketContainer.class);
-		var wsRoom1 = new MockWebSocketServer(wsContainer, "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460));
+		var expectedWsUrl = "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460);
+		var wsServer = new MockWebSocketServer(Site.STACKOVERFLOW, expectedWsUrl);
+		var wsClient = wsServer.getClient();
 
-		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
+		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsClient);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
 
@@ -510,7 +571,7 @@ class RoomTest {
 		room.addEventListener(MessagesMovedEvent.class, events::add);
 
 		//@formatter:off
-		wsRoom1.send(ResponseSamples.webSocket()
+		wsServer.send(ResponseSamples.webSocket()
 		.room(1, "Sandbox")
 			.movedIn().id(1).timestamp(1417041460).content("one").user(50, "User").messageId(20157245).moved().done()
 			.movedIn().id(2).timestamp(1417041470).content("two").user(50, "User").messageId(20157246).moved().done()
@@ -586,10 +647,11 @@ class RoomTest {
 		.build();
 		//@formatter:on
 
-		var wsContainer = mock(WebSocketContainer.class);
-		var wsRoom1 = new MockWebSocketServer(wsContainer, "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460));
+		var expectedWsUrl = "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460);
+		var wsServer = new MockWebSocketServer(Site.STACKOVERFLOW, expectedWsUrl);
+		var wsClient = wsServer.getClient();
 
-		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
+		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsClient);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
 
@@ -597,7 +659,7 @@ class RoomTest {
 		room.addEventListener(UserEnteredEvent.class, events::add);
 
 		//@formatter:off
-		wsRoom1.send(ResponseSamples.webSocket()
+		wsServer.send(ResponseSamples.webSocket()
 		.room(1, "Sandbox")
 			.userEntered().id(1).timestamp(1417041460).user(50, "User").done()
 		.build());
@@ -626,10 +688,11 @@ class RoomTest {
 		.build();
 		//@formatter:on
 
-		var wsContainer = mock(WebSocketContainer.class);
-		var wsRoom1 = new MockWebSocketServer(wsContainer, "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460));
+		var expectedWsUrl = "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460);
+		var wsServer = new MockWebSocketServer(Site.STACKOVERFLOW, expectedWsUrl);
+		var wsClient = wsServer.getClient();
 
-		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
+		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsClient);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
 
@@ -637,7 +700,7 @@ class RoomTest {
 		room.addEventListener(UserLeftEvent.class, events::add);
 
 		//@formatter:off
-		wsRoom1.send(ResponseSamples.webSocket()
+		wsServer.send(ResponseSamples.webSocket()
 		.room(1, "Sandbox")
 			.userLeft().id(1).timestamp(1417041460).user(50, "User").done()
 		.build());
@@ -666,10 +729,11 @@ class RoomTest {
 		.build();
 		//@formatter:on
 
-		var wsContainer = mock(WebSocketContainer.class);
-		var wsRoom1 = new MockWebSocketServer(wsContainer, "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460));
+		var expectedWsUrl = "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460);
+		var wsServer = new MockWebSocketServer(Site.STACKOVERFLOW, expectedWsUrl);
+		var wsClient = wsServer.getClient();
 
-		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
+		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsClient);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
 
@@ -677,7 +741,7 @@ class RoomTest {
 		room.addEventListener(MessagePostedEvent.class, events::add);
 
 		//@formatter:off
-		wsRoom1.send(ResponseSamples.webSocket()
+		wsServer.send(ResponseSamples.webSocket()
 		.room(1, "Sandbox")
 			.newMessage().id(1).timestamp(1417041460).content("one").user(50, "User").messageId(20157245).done()
 		.room(139, "Jaba")
@@ -715,10 +779,11 @@ class RoomTest {
 		.build();
 		//@formatter:on
 
-		var wsContainer = mock(WebSocketContainer.class);
-		var wsRoom1 = new MockWebSocketServer(wsContainer, "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460));
+		var expectedWsUrl = "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460);
+		var wsServer = new MockWebSocketServer(Site.STACKOVERFLOW, expectedWsUrl);
+		var wsClient = wsServer.getClient();
 
-		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
+		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsClient);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
 
@@ -726,13 +791,13 @@ class RoomTest {
 		room.addEventListener(events::add);
 
 		//@formatter:off
-		wsRoom1.send(ResponseSamples.webSocket()
+		wsServer.send(ResponseSamples.webSocket()
 		.room(1, "Sandbox")
 			.userEntered().id(1).timestamp(1417041460).user(50, "User").done()
 			.newMessage().id(2).timestamp(1417041470).content("<i>meow</i>").user(50, "User").messageId(20157245).done()
 		.build());
 		
-		wsRoom1.send(ResponseSamples.webSocket()
+		wsServer.send(ResponseSamples.webSocket()
 		.room(1, "Sandbox")
 			.userLeft().id(3).timestamp(1417041480).user(50, "User").done()
 		.build());
@@ -800,9 +865,11 @@ class RoomTest {
 		.build();
 		//@formatter:on
 
-		var wsContainer = mock(WebSocketContainer.class);
+		var expectedWsUrl = "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460);
+		var wsServer = new MockWebSocketServer(Site.STACKOVERFLOW, expectedWsUrl);
+		var wsClient = wsServer.getClient();
 
-		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
+		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsClient);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
 		var messages = room.getMessages(3);
@@ -896,9 +963,11 @@ class RoomTest {
 		.build();
 		//@formatter:on
 
-		var wsContainer = mock(WebSocketContainer.class);
+		var expectedWsUrl = "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460);
+		var wsServer = new MockWebSocketServer(Site.STACKOVERFLOW, expectedWsUrl);
+		var wsClient = wsServer.getClient();
 
-		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
+		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsClient);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
 		assertThrows(IOException.class, () -> room.getMessages(3));
@@ -925,9 +994,11 @@ class RoomTest {
 		.build();
 		//@formatter:on
 
-		var wsContainer = mock(WebSocketContainer.class);
+		var expectedWsUrl = "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460);
+		var wsServer = new MockWebSocketServer(Site.STACKOVERFLOW, expectedWsUrl);
+		var wsClient = wsServer.getClient();
 
-		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
+		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsClient);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
 		assertEquals(1, room.sendMessage("one"));
@@ -962,11 +1033,11 @@ class RoomTest {
 		.build();
 		//@formatter:on
 
-		var wsContainer = mock(WebSocketContainer.class);
-		var session = mock(Session.class);
-		doReturn(session).when(wsContainer).connectToServer(any(Endpoint.class), any(ClientEndpointConfig.class), eq(new URI("wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=1417023460")));
+		var expectedWsUrl = "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460);
+		var wsServer = new MockWebSocketServer(Site.STACKOVERFLOW, expectedWsUrl);
+		var wsClient = wsServer.getClient();
 
-		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
+		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsClient);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
 
@@ -1000,11 +1071,11 @@ class RoomTest {
 		.build();
 		//@formatter:on
 
-		var wsContainer = mock(WebSocketContainer.class);
-		var session = mock(Session.class);
-		doReturn(session).when(wsContainer).connectToServer(any(Endpoint.class), any(ClientEndpointConfig.class), eq(new URI("wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=1417023460")));
+		var expectedWsUrl = "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460);
+		var wsServer = new MockWebSocketServer(Site.STACKOVERFLOW, expectedWsUrl);
+		var wsClient = wsServer.getClient();
 
-		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
+		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsClient);
 		chatClient.login("email", "password");
 		var room1 = chatClient.joinRoom(1);
 
@@ -1055,11 +1126,11 @@ class RoomTest {
 		.build();
 		//@formatter:on
 
-		var wsContainer = mock(WebSocketContainer.class);
-		var session = mock(Session.class);
-		doReturn(session).when(wsContainer).connectToServer(any(Endpoint.class), any(ClientEndpointConfig.class), eq(new URI("wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=1417023460")));
+		var expectedWsUrl = "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=1417023460";
+		var wsServer = new MockWebSocketServer(Site.STACKOVERFLOW, expectedWsUrl);
+		var wsClient = wsServer.getClient();
 
-		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
+		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsClient);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
 		assertThrows(RoomPermissionException.class, () -> room.sendMessage("one"));
@@ -1100,9 +1171,11 @@ class RoomTest {
 		.build();
 		//@formatter:on
 
-		var wsContainer = mock(WebSocketContainer.class);
+		var expectedWsUrl = "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460);
+		var wsServer = new MockWebSocketServer(Site.STACKOVERFLOW, expectedWsUrl);
+		var wsClient = wsServer.getClient();
 
-		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
+		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsClient);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
 		assertThrows(IOException.class, () -> room.sendMessage("one"));
@@ -1158,9 +1231,11 @@ class RoomTest {
 		.build();
 		//@formatter:on
 
-		var wsContainer = mock(WebSocketContainer.class);
+		var expectedWsUrl = "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460);
+		var wsServer = new MockWebSocketServer(Site.STACKOVERFLOW, expectedWsUrl);
+		var wsClient = wsServer.getClient();
 
-		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
+		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsClient);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
 
@@ -1213,9 +1288,11 @@ class RoomTest {
 		.build();
 		//@formatter:on
 
-		var wsContainer = mock(WebSocketContainer.class);
+		var expectedWsUrl = "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460);
+		var wsServer = new MockWebSocketServer(Site.STACKOVERFLOW, expectedWsUrl);
+		var wsClient = wsServer.getClient();
 
-		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
+		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsClient);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
 
@@ -1244,9 +1321,11 @@ class RoomTest {
 		.build();
 		//@formatter:on
 
-		var wsContainer = mock(WebSocketContainer.class);
+		var expectedWsUrl = "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460);
+		var wsServer = new MockWebSocketServer(Site.STACKOVERFLOW, expectedWsUrl);
+		var wsClient = wsServer.getClient();
 
-		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
+		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsClient);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
 
@@ -1295,9 +1374,11 @@ class RoomTest {
 		.build();
 		//@formatter:on
 
-		var wsContainer = mock(WebSocketContainer.class);
+		var expectedWsUrl = "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460);
+		var wsServer = new MockWebSocketServer(Site.STACKOVERFLOW, expectedWsUrl);
+		var wsClient = wsServer.getClient();
 
-		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
+		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsClient);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
 		assertThrows(IOException.class, () -> room.getPingableUsers());
@@ -1327,9 +1408,11 @@ class RoomTest {
 		.build();
 		//@formatter:on
 
-		var wsContainer = mock(WebSocketContainer.class);
+		var expectedWsUrl = "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460);
+		var wsServer = new MockWebSocketServer(Site.STACKOVERFLOW, expectedWsUrl);
+		var wsClient = wsServer.getClient();
 
-		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
+		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsClient);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
 
@@ -1395,9 +1478,11 @@ class RoomTest {
 		.build();
 		//@formatter:on
 
-		var wsContainer = mock(WebSocketContainer.class);
+		var expectedWsUrl = "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460);
+		var wsServer = new MockWebSocketServer(Site.STACKOVERFLOW, expectedWsUrl);
+		var wsClient = wsServer.getClient();
 
-		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
+		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsClient);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
 		assertThrows(IOException.class, () -> room.getUserInfo(List.of(13379)));
@@ -1437,9 +1522,11 @@ class RoomTest {
 		.build();
 		//@formatter:on
 
-		var wsContainer = mock(WebSocketContainer.class);
+		var expectedWsUrl = "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460);
+		var wsServer = new MockWebSocketServer(Site.STACKOVERFLOW, expectedWsUrl);
+		var wsClient = wsServer.getClient();
 
-		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
+		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsClient);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
 
@@ -1476,9 +1563,11 @@ class RoomTest {
 		.build();
 		//@formatter:on
 
-		var wsContainer = mock(WebSocketContainer.class);
+		var expectedWsUrl = "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460);
+		var wsServer = new MockWebSocketServer(Site.STACKOVERFLOW, expectedWsUrl);
+		var wsClient = wsServer.getClient();
 
-		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsContainer);
+		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsClient);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
 		assertThrows(IOException.class, () -> room.getRoomInfo());
@@ -1520,45 +1609,6 @@ class RoomTest {
 	 */
 	private static void verifyNumberOfRequestsSent(CloseableHttpClient httpClient, int requests) throws IOException {
 		verify(httpClient, times(requests)).execute(any(HttpUriRequest.class));
-	}
-
-	/**
-	 * Represents a mock web socket server.
-	 * @author Michael Angstadt
-	 */
-	private static class MockWebSocketServer {
-		private Whole<String> messageHandler;
-
-		/**
-		 * @param container the mock web socket container. This object is shared
-		 * amongst all the {@link MockWebSocketServer} instances (each instance
-		 * is for a single chat room).
-		 * @param url the expected URL that the room will use to connect to the
-		 * web socket
-		 */
-		@SuppressWarnings("unchecked")
-		public MockWebSocketServer(WebSocketContainer container, String url) throws Exception {
-			var session = mock(Session.class);
-
-			doAnswer(invocation -> {
-				messageHandler = (Whole<String>) invocation.getArguments()[1];
-				return null;
-			}).when(session).addMessageHandler(eq(String.class), any(Whole.class));
-
-			when(container.connectToServer(any(Endpoint.class), any(ClientEndpointConfig.class), eq(new URI(url)))).then(invocation -> {
-				var endpoint = (Endpoint) invocation.getArguments()[0];
-				endpoint.onOpen(session, mock(EndpointConfig.class));
-				return session;
-			});
-		}
-
-		/**
-		 * Sends a web socket message out from the server.
-		 * @param message the message to send
-		 */
-		public void send(String message) {
-			messageHandler.onMessage(message);
-		}
 	}
 
 	/**

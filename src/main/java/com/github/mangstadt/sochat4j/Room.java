@@ -2,6 +2,7 @@ package com.github.mangstadt.sochat4j;
 
 import static java.util.function.Function.identity;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.time.Duration;
@@ -176,8 +177,28 @@ public class Room implements IRoom {
 
 			@Override
 			public void onFailure(WebSocket webSocket, Throwable t, okhttp3.Response response) {
-				logger.log(Level.SEVERE, t, () -> "[room=" + roomId + "]: Problem with web socket. Leaving room.");
-				leave();
+				if (t instanceof EOFException) {
+					/*
+					 * EOFException is thrown when the web socket is abruptly
+					 * disconnected. This has been a long-running issue that
+					 * began occurring more frequently in early June 2024.
+					 * 
+					 * See: https://chat.stackoverflow.com/transcript/message/
+					 * 57407855#57407855
+					 */
+					logger.log(Level.WARNING, t, () -> "[room=" + roomId + "]: Web socket abrubtly disconnected. Attempting to reconnect.");
+					try {
+						synchronized (Room.this) {
+							connectToWebSocket();
+						}
+					} catch (IOException e) {
+						logger.log(Level.SEVERE, e, () -> "[room=" + roomId + "]: Problem reconnecting to web socket. Leaving room.");
+						leave();
+					}
+				} else {
+					logger.log(Level.SEVERE, t, () -> "[room=" + roomId + "]: Problem with web socket. Leaving room.");
+					leave();
+				}
 			}
 
 			@Override

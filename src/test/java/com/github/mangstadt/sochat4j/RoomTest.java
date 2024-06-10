@@ -1126,7 +1126,7 @@ class RoomTest {
 		.build();
 		//@formatter:on
 
-		var expectedWsUrl = "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=1417023460";
+		var expectedWsUrl = "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417041460);
 		var wsServer = new MockWebSocketServer(Site.STACKOVERFLOW, expectedWsUrl);
 		var wsClient = wsServer.getClient();
 

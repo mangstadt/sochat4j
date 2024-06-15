@@ -4,6 +4,7 @@ import static java.util.function.Function.identity;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.net.SocketException;
 import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.ZoneOffset;
@@ -177,11 +178,14 @@ public class Room implements IRoom {
 
 			@Override
 			public void onFailure(WebSocket webSocket, Throwable t, okhttp3.Response response) {
-				if (t instanceof EOFException) {
+				if (t instanceof EOFException || t instanceof SocketException) {
 					/*
-					 * EOFException is thrown when the web socket is abruptly
-					 * disconnected. This has been a long-running issue that
-					 * began occurring more frequently in early June 2024.
+					 * If any of these exceptions are thrown, reconnect to the
+					 * web socket.
+					 * 
+					 * The web socket will sometimes abruptly disconnect for
+					 * some unknown reason. This has been a long-running issue
+					 * that began occurring more frequently in early June 2024.
 					 * 
 					 * See: https://chat.stackoverflow.com/transcript/message/
 					 * 57407855#57407855

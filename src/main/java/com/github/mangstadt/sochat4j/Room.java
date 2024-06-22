@@ -5,6 +5,7 @@ import static java.util.function.Function.identity;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.ZoneOffset;
@@ -178,7 +179,7 @@ public class Room implements IRoom {
 
 			@Override
 			public void onFailure(WebSocket webSocket, Throwable t, okhttp3.Response response) {
-				if (t instanceof EOFException || t instanceof SocketException) {
+				if (t instanceof EOFException || t instanceof SocketException || t instanceof SocketTimeoutException) {
 					/*
 					 * If any of these exceptions are thrown, reconnect to the
 					 * web socket.

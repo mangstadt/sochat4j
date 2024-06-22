@@ -214,7 +214,19 @@ public class Room implements IRoom {
 			@Override
 			public void onClosing(WebSocket webSocket, int code, String reason) {
 				//Invoked when the remote peer has indicated that no more incoming messages will be transmitted.
-				logger.log(Level.SEVERE, () -> "[room=" + roomId + "]: Web socket closed by server. Reason=" + reason + ". Code=" + code);
+				if ("CloudFlare WebSocket proxy restarting.".equals(reason)) {
+					logger.warning(() -> "[room=" + roomId + "]: Web socket closed by CloudFlare. Attempting to reconnect.");
+					try {
+						synchronized (Room.this) {
+							connectToWebSocket();
+						}
+					} catch (IOException e) {
+						logger.log(Level.SEVERE, e, () -> "[room=" + roomId + "]: Problem reconnecting to web socket. Leaving room.");
+						leave();
+					}
+				} else {
+					logger.log(Level.SEVERE, () -> "[room=" + roomId + "]: Web socket closed by server. Reason=" + reason + ". Code=" + code);
+				}
 			}
 		});
 

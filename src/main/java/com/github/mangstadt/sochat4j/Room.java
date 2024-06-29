@@ -172,6 +172,8 @@ public class Room implements IRoom {
 		logger.info(() -> "Connecting to web socket [room=" + roomId + "]: " + wsUri);
 
 		webSocket = webSocketClient.connect(wsUri, origin, new WebSocketListener() {
+			private boolean alreadyReconnected = false;
+
 			@Override
 			public void onMessage(WebSocket webSocket, String text) {
 				handleWebSocketMessage(text);
@@ -192,6 +194,7 @@ public class Room implements IRoom {
 					 * 57407855#57407855
 					 */
 					logger.log(Level.WARNING, t, () -> "[room=" + roomId + "]: Web socket abrubtly disconnected. Attempting to reconnect.");
+					alreadyReconnected = true;
 					try {
 						synchronized (Room.this) {
 							connectToWebSocket();
@@ -210,12 +213,26 @@ public class Room implements IRoom {
 			public void onClosed(WebSocket webSocket, int code, String reason) {
 				//Invoked when both peers have indicated that no more messages will be transmitted and the connection has been successfully released.
 				logger.log(Level.SEVERE, () -> "[room=" + roomId + "]: Web socket closed. Reason=" + reason + ". Code=" + code);
+
+				attemptToReconnect(reason);
 			}
 
 			@Override
 			public void onClosing(WebSocket webSocket, int code, String reason) {
 				//Invoked when the remote peer has indicated that no more incoming messages will be transmitted.
+				logger.log(Level.SEVERE, () -> "[room=" + roomId + "]: Web socket closed by server. Reason=" + reason + ". Code=" + code);
+
+				attemptToReconnect(reason);
+			}
+
+			private void attemptToReconnect(String reason) {
+				if (alreadyReconnected) {
+					return;
+				}
+
 				if ("CloudFlare WebSocket proxy restarting.".equals(reason)) {
+					alreadyReconnected = true;
+
 					logger.warning(() -> "[room=" + roomId + "]: Web socket closed by CloudFlare. Attempting to reconnect.");
 					try {
 						synchronized (Room.this) {
@@ -225,8 +242,6 @@ public class Room implements IRoom {
 						logger.log(Level.SEVERE, e, () -> "[room=" + roomId + "]: Problem reconnecting to web socket. Leaving room.");
 						leave();
 					}
-				} else {
-					logger.log(Level.SEVERE, () -> "[room=" + roomId + "]: Web socket closed by server. Reason=" + reason + ". Code=" + code);
 				}
 			}
 		});

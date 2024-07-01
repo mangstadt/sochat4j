@@ -230,7 +230,7 @@ public class Room implements IRoom {
 					return;
 				}
 
-				if ("CloudFlare WebSocket proxy restarting.".equals(reason)) {
+				if ("CloudFlare WebSocket proxy restarting".equals(reason)) {
 					alreadyReconnected = true;
 
 					logger.warning(() -> "[room=" + roomId + "]: Web socket closed by CloudFlare. Attempting to reconnect.");

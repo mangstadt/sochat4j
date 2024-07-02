@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.logging.Logger;
 import java.util.stream.IntStream;
 
 import org.apache.http.Consts;
@@ -20,6 +19,8 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -30,7 +31,7 @@ import com.fasterxml.jackson.databind.JsonNode;
  * @author Michael Angstadt
  */
 public class Http implements Closeable {
-	private static final Logger logger = Logger.getLogger(Http.class.getName());
+	private static final Logger logger = LoggerFactory.getLogger(Http.class);
 
 	protected final CloseableHttpClient client;
 
@@ -48,7 +49,7 @@ public class Http implements Closeable {
 	 * @throws IOException if there's a problem sending the request
 	 */
 	public Response head(String uri) throws IOException {
-		logger.fine(() -> "Sending request [method=HEAD; URI=" + uri + "]...");
+		logger.atDebug().log(() -> "Sending request [method=HEAD; URI=" + uri + "]...");
 		return send(new HttpHead(uri));
 	}
 
@@ -59,7 +60,7 @@ public class Http implements Closeable {
 	 * @throws IOException if there's a problem sending the request
 	 */
 	public Response get(String uri) throws IOException {
-		logger.fine(() -> "Sending request [method=GET; URI=" + uri + "]...");
+		logger.atDebug().log(() -> "Sending request [method=GET; URI=" + uri + "]...");
 		return send(new HttpGet(uri));
 	}
 
@@ -118,7 +119,7 @@ public class Http implements Closeable {
 			request.setEntity(new UrlEncodedFormEntity(params, Consts.UTF_8));
 		}
 
-		logger.fine(() -> "Sending request [method=POST; URI=" + uri + "; params=" + Arrays.toString(parameters) + "]...");
+		logger.atDebug().log(() -> "Sending request [method=POST; URI=" + uri + "; params=" + Arrays.toString(parameters) + "]...");
 
 		return send(request, rateLimitHandler);
 	}
@@ -173,7 +174,7 @@ public class Http implements Closeable {
 			}
 
 			var sleep = rateLimitHandler.getWaitTime(response);
-			logger.info(() -> "Sleeping for " + sleep.toMillis() + "ms before resending the request...");
+			logger.atInfo().log(() -> "Sleeping for " + sleep.toMillis() + "ms before resending the request...");
 			Sleeper.sleep(sleep);
 		}
 

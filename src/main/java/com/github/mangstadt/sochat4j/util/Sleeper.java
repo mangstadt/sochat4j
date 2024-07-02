@@ -1,8 +1,9 @@
 package com.github.mangstadt.sochat4j.util;
 
 import java.time.Duration;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Use this class for when you want to call {@link Thread#sleep} in production,
@@ -10,7 +11,7 @@ import java.util.logging.Logger;
  * @author Michael Angstadt
  */
 public class Sleeper {
-	private static final Logger logger = Logger.getLogger(Sleeper.class.getName());
+	private static final Logger logger = LoggerFactory.getLogger(Sleeper.class);
 
 	/**
 	 * Keeps a count of how long threads have slept for if {@link #unitTest} is
@@ -68,7 +69,7 @@ public class Sleeper {
 			 * https://rules.sonarsource.com/java/RSPEC-2142/
 			 */
 			Thread.currentThread().interrupt();
-			logger.log(Level.WARNING, e, () -> "Thread interrupted while sleeping.");
+			logger.atWarn().setCause(e).log(() -> "Thread interrupted while sleeping.");
 		}
 	}
 

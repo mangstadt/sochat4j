@@ -8,8 +8,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import org.apache.http.client.config.CookieSpecs;
@@ -22,6 +20,8 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.jsoup.nodes.Document;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.github.mangstadt.sochat4j.util.Http;
 import com.github.mangstadt.sochat4j.util.WebSocketClient;
@@ -35,7 +35,7 @@ import com.github.mangstadt.sochat4j.util.WebSocketClientImpl;
  * explanation of how SO Chat works</a>
  */
 public class ChatClient implements IChatClient {
-	private static final Logger logger = Logger.getLogger(ChatClient.class.getName());
+	private static final Logger logger = LoggerFactory.getLogger(ChatClient.class);
 
 	private final Http http;
 	private final WebSocketClient webSocketClient;
@@ -370,7 +370,7 @@ public class ChatClient implements IChatClient {
 					);
 					//@formatter:on
 				} catch (IOException e) {
-					logger.log(Level.SEVERE, e, () -> "Problem leaving all rooms.");
+					logger.atError().setCause(e).log(() -> "Problem leaving all rooms.");
 				}
 			}
 
@@ -378,7 +378,7 @@ public class ChatClient implements IChatClient {
 				try {
 					room.close();
 				} catch (IOException e) {
-					logger.log(Level.WARNING, e, () -> "Problem closing websocket connection for room " + room.getRoomId() + ".");
+					logger.atWarn().setCause(e).log(() -> "Problem closing websocket connection for room " + room.getRoomId() + ".");
 				}
 			}
 			rooms.clear();
@@ -387,7 +387,7 @@ public class ChatClient implements IChatClient {
 		try {
 			http.close();
 		} catch (IOException e) {
-			logger.log(Level.WARNING, e, () -> "Problem closing HTTP connection.");
+			logger.atWarn().setCause(e).log(() -> "Problem closing HTTP connection.");
 		}
 	}
 

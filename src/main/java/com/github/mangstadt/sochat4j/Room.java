@@ -18,8 +18,6 @@ import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.function.Consumer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -27,6 +25,8 @@ import org.apache.http.client.utils.URIBuilder;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -56,7 +56,7 @@ import okhttp3.WebSocketListener;
  * @author Michael Angstadt
  */
 public class Room implements IRoom {
-	private static final Logger logger = Logger.getLogger(Room.class.getName());
+	private static final Logger logger = LoggerFactory.getLogger(Room.class);
 	private static final int MAX_MESSAGE_LENGTH = 500;
 
 	private static final int MAX_WEBSOCKET_REFRESH_ATTEMPTS = 3;
@@ -169,7 +169,7 @@ public class Room implements IRoom {
 		var wsUri = getWebSocketUri();
 		var origin = baseUrl().toString();
 
-		logger.info(() -> "Connecting to web socket [room=" + roomId + "]: " + wsUri);
+		logger.atInfo().log(() -> "Connecting to web socket [room=" + roomId + "]: " + wsUri);
 
 		webSocket = webSocketClient.connect(wsUri, origin, new WebSocketListener() {
 			private boolean alreadyReconnected = false;
@@ -193,18 +193,18 @@ public class Room implements IRoom {
 					 * See: https://chat.stackoverflow.com/transcript/message/
 					 * 57407855#57407855
 					 */
-					logger.log(Level.WARNING, t, () -> "[room=" + roomId + "]: Web socket abrubtly disconnected. Attempting to reconnect.");
+					logger.atWarn().setCause(t).log(() -> "[room=" + roomId + "]: Web socket abrubtly disconnected. Attempting to reconnect.");
 					alreadyReconnected = true;
 					try {
 						synchronized (Room.this) {
 							connectToWebSocket();
 						}
 					} catch (IOException e) {
-						logger.log(Level.SEVERE, e, () -> "[room=" + roomId + "]: Problem reconnecting to web socket. Leaving room.");
+						logger.atError().setCause(e).log(() -> "[room=" + roomId + "]: Problem reconnecting to web socket. Leaving room.");
 						leave();
 					}
 				} else {
-					logger.log(Level.SEVERE, t, () -> "[room=" + roomId + "]: Problem with web socket. Leaving room.");
+					logger.atError().setCause(t).log(() -> "[room=" + roomId + "]: Problem with web socket. Leaving room.");
 					leave();
 				}
 			}
@@ -212,7 +212,7 @@ public class Room implements IRoom {
 			@Override
 			public void onClosed(WebSocket webSocket, int code, String reason) {
 				//Invoked when both peers have indicated that no more messages will be transmitted and the connection has been successfully released.
-				logger.log(Level.SEVERE, () -> "[room=" + roomId + "]: Web socket closed. Reason=" + reason + ". Code=" + code);
+				logger.atError().log(() -> "[room=" + roomId + "]: Web socket closed. Reason=" + reason + ". Code=" + code);
 
 				attemptToReconnect(reason);
 			}
@@ -220,7 +220,7 @@ public class Room implements IRoom {
 			@Override
 			public void onClosing(WebSocket webSocket, int code, String reason) {
 				//Invoked when the remote peer has indicated that no more incoming messages will be transmitted.
-				logger.log(Level.SEVERE, () -> "[room=" + roomId + "]: Web socket closed by server. Reason=" + reason + ". Code=" + code);
+				logger.atError().log(() -> "[room=" + roomId + "]: Web socket closed by server. Reason=" + reason + ". Code=" + code);
 
 				attemptToReconnect(reason);
 			}
@@ -233,20 +233,20 @@ public class Room implements IRoom {
 				if ("CloudFlare WebSocket proxy restarting".equals(reason)) {
 					alreadyReconnected = true;
 
-					logger.warning(() -> "[room=" + roomId + "]: Web socket closed by CloudFlare. Attempting to reconnect.");
+					logger.atWarn().log(() -> "[room=" + roomId + "]: Web socket closed by CloudFlare. Attempting to reconnect.");
 					try {
 						synchronized (Room.this) {
 							connectToWebSocket();
 						}
 					} catch (IOException e) {
-						logger.log(Level.SEVERE, e, () -> "[room=" + roomId + "]: Problem reconnecting to web socket. Leaving room.");
+						logger.atError().setCause(e).log(() -> "[room=" + roomId + "]: Problem reconnecting to web socket. Leaving room.");
 						leave();
 					}
 				}
 			}
 		});
 
-		logger.info(() -> "Web socket connection successful [room=" + roomId + "]: " + wsUri);
+		logger.atInfo().log(() -> "Web socket connection successful [room=" + roomId + "]: " + wsUri);
 	}
 
 	/**
@@ -260,7 +260,7 @@ public class Room implements IRoom {
 			@Override
 			public void run() {
 				synchronized (Room.this) {
-					logger.info(() -> "[room=" + roomId + "]: Recreating websocket connection.");
+					logger.atInfo().log(() -> "[room=" + roomId + "]: Recreating websocket connection.");
 
 					webSocket.close(CLOSE_NORMAL, "");
 
@@ -272,13 +272,13 @@ public class Room implements IRoom {
 							connectToWebSocket();
 							connected = true;
 						} catch (IOException e) {
-							logger.log(Level.SEVERE, e, () -> "[room=" + roomId + "]: Could not recreate websocket session. Trying again in " + PAUSE_BETWEEN_WEBSOCKET_REFRESH_ATTEMPTS.getSeconds() + " seconds.");
+							logger.atError().setCause(e).log(() -> "[room=" + roomId + "]: Could not recreate websocket session. Trying again in " + PAUSE_BETWEEN_WEBSOCKET_REFRESH_ATTEMPTS.getSeconds() + " seconds.");
 							Sleeper.sleep(PAUSE_BETWEEN_WEBSOCKET_REFRESH_ATTEMPTS);
 						}
 					}
 
 					if (!connected) {
-						logger.severe(() -> "[room=" + roomId + "]: Could not recreate websocket session after " + MAX_WEBSOCKET_REFRESH_ATTEMPTS + " tries. Leaving the room.");
+						logger.atError().log(() -> "[room=" + roomId + "]: Could not recreate websocket session after " + MAX_WEBSOCKET_REFRESH_ATTEMPTS + " tries. Leaving the room.");
 						leave();
 					}
 				}
@@ -348,11 +348,11 @@ public class Room implements IRoom {
 		try {
 			node = JsonUtils.parse(json);
 		} catch (JsonProcessingException e) {
-			logger.log(Level.SEVERE, e, () -> "[room " + roomId + "]: Problem parsing JSON from web socket:\n" + json);
+			logger.atError().setCause(e).log(() -> "[room " + roomId + "]: Problem parsing JSON from web socket:\n" + json);
 			return;
 		}
 
-		logger.fine(() -> "[room " + roomId + "]: Received message:\n" + JsonUtils.prettyPrint(node) + "\n");
+		logger.atDebug().log(() -> "[room " + roomId + "]: Received message:\n" + JsonUtils.prettyPrint(node) + "\n");
 
 		var roomNode = node.get("r" + roomId);
 		if (roomNode == null) {
@@ -417,13 +417,13 @@ public class Room implements IRoom {
 		for (var eventNode : eventsNode) {
 			var eventTypeNode = eventNode.get("event_type");
 			if (eventTypeNode == null || !eventTypeNode.canConvertToInt()) {
-				logger.warning(() -> "[room " + roomId + "]: Ignoring JSON object that does not have a valid \"event_type\" field:\n" + JsonUtils.prettyPrint(eventNode) + "\n");
+				logger.atWarn().log(() -> "[room " + roomId + "]: Ignoring JSON object that does not have a valid \"event_type\" field:\n" + JsonUtils.prettyPrint(eventNode) + "\n");
 				continue;
 			}
 
 			var eventType = WebSocketEventType.get(eventTypeNode.asInt());
 			if (eventType == null) {
-				logger.warning(() -> "[room " + roomId + "]: Ignoring event with unknown \"event_type\":\n" + JsonUtils.prettyPrint(eventNode) + "\n");
+				logger.atWarn().log(() -> "[room " + roomId + "]: Ignoring event with unknown \"event_type\":\n" + JsonUtils.prettyPrint(eventNode) + "\n");
 				continue;
 			}
 
@@ -446,7 +446,7 @@ public class Room implements IRoom {
 		case MESSAGE_STARRED -> WebSocketEventParsers.messageStarred(node);
 		case MESSAGE_DELETED -> WebSocketEventParsers.messageDeleted(node);
 		default -> {
-			logger.warning(() -> "[room " + roomId + "]: Ignoring event with unknown \"event_type\":\n" + JsonUtils.prettyPrint(node) + "\n");
+			logger.atWarn().log(() -> "[room " + roomId + "]: Ignoring event with unknown \"event_type\":\n" + JsonUtils.prettyPrint(node) + "\n");
 			yield null;
 		}
 		};
@@ -585,7 +585,7 @@ public class Room implements IRoom {
 		case "\"You can only delete your own messages\"":
 			throw new IOException("Message " + messageId + " cannot be deleted because it was posted by somebody else.");
 		default:
-			logger.warning(() -> "Unexpected response when attempting to delete message [room=" + roomId + ", id=" + messageId + "]: " + body);
+			logger.atWarn().log(() -> "Unexpected response when attempting to delete message [room=" + roomId + ", id=" + messageId + "]: " + body);
 			break;
 		}
 	}
@@ -620,7 +620,7 @@ public class Room implements IRoom {
 		case "\"You can only edit your own messages\"":
 			throw new IOException("Message " + messageId + " cannot be edited because it was posted by somebody else.");
 		default:
-			logger.warning(() -> "Unexpected response when attempting to edit message [room=" + roomId + ", id=" + messageId + "]: " + body);
+			logger.atWarn().log(() -> "Unexpected response when attempting to edit message [room=" + roomId + ", id=" + messageId + "]: " + body);
 			break;
 		}
 	}
@@ -805,13 +805,13 @@ public class Room implements IRoom {
 			);
 			//@formatter:on
 		} catch (Exception e) {
-			logger.log(Level.SEVERE, e, () -> "[room=" + roomId + "]: Problem leaving room.");
+			logger.atError().setCause(e).log(() -> "[room=" + roomId + "]: Problem leaving room.");
 		}
 
 		try {
 			close();
 		} catch (IOException e) {
-			logger.log(Level.SEVERE, e, () -> "[room=" + roomId + "]: Problem closing websocket session.");
+			logger.atError().setCause(e).log(() -> "[room=" + roomId + "]: Problem closing websocket session.");
 		}
 	}
 

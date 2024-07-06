@@ -22,4 +22,17 @@ public class WebSocketClientImpl implements WebSocketClient {
 
 		return client.newWebSocket(request, listener);
 	}
+
+	@Override
+	public void close() {
+		/*
+		 * Without these method calls, various threads that OkHttp creates will
+		 * continue to run for 1 minute after the bot has shutdown, preventing
+		 * its Java process from terminating right away.
+		 * 
+		 * See: https://javadoc.io/doc/com.squareup.okhttp3/okhttp/3.14.9/okhttp3/OkHttpClient.html
+		 */
+		client.dispatcher().executorService().shutdown();
+		client.connectionPool().evictAll();
+	}
 }

@@ -389,6 +389,12 @@ public class ChatClient implements IChatClient {
 		} catch (IOException e) {
 			logger.atWarn().setCause(e).log(() -> "Problem closing HTTP connection.");
 		}
+
+		try {
+			webSocketClient.close();
+		} catch (IOException e) {
+			logger.atWarn().setCause(e).log(() -> "Problem closing web socket client.");
+		}
 	}
 
 	private void assertLoggedIn() {

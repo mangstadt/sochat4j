@@ -200,8 +200,19 @@ public class Room implements IRoom {
 							connectToWebSocket();
 						}
 					} catch (IOException e) {
-						logger.atError().setCause(e).log(() -> "[room=" + roomId + "]: Problem reconnecting to web socket. Leaving room.");
-						leave();
+						/*
+						 * Wait a bit, then try a second time *shrug*.
+						 */
+						logger.atWarn().setCause(e).log(() -> "[room=" + roomId + "]: Web socket reconnection attempt failed. Waiting 10 seconds, then trying one more time.");
+						Sleeper.sleep(Duration.ofSeconds(10));
+						try {
+							synchronized (Room.this) {
+								connectToWebSocket();
+							}
+						} catch (IOException e2) {
+							logger.atError().setCause(e2).log(() -> "[room=" + roomId + "]: Problem reconnecting to web socket. Leaving room.");
+							leave();
+						}
 					}
 				} else {
 					logger.atError().setCause(t).log(() -> "[room=" + roomId + "]: Problem with web socket. Leaving room.");

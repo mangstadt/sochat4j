@@ -125,6 +125,29 @@ public interface IChatClient extends Closeable {
 	String uploadImage(byte[] data) throws IOException;
 
 	/**
+	 * Gets information about one or more chat users, such as their reputation,
+	 * username, and whether they are a room owner.
+	 * @param roomId the room they are currently in
+	 * @param userIds the user IDs
+	 * @return the user information
+	 * @throws IOException if there's a problem executing the request
+	 */
+	List<UserInfo> getUserInfo(int roomId, List<Integer> userIds) throws IOException;
+
+	/**
+	 * Gets information about a single chat user, such as their reputation,
+	 * username, and whether they are a room owner.
+	 * @param roomId the room they are currently in
+	 * @param userIds the user ID
+	 * @return the user information or null if not found
+	 * @throws IOException if there's a problem executing the request
+	 */
+	default UserInfo getUserInfo(int roomId, int userId) throws IOException {
+		var info = getUserInfo(roomId, List.of(userId));
+		return info.isEmpty() ? null : info.get(0);
+	}
+
+	/**
 	 * Gets the account's username.
 	 * @return the username or null if it couldn't be automatically retrieved.
 	 * @throws IllegalStateException if the user has not yet logged in

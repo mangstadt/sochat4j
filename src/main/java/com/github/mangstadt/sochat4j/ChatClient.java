@@ -9,6 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
@@ -23,7 +24,9 @@ import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.github.mangstadt.sochat4j.util.Http;
+import com.github.mangstadt.sochat4j.util.JsonUtils;
 import com.github.mangstadt.sochat4j.util.WebSocketClient;
 import com.github.mangstadt.sochat4j.util.WebSocketClientImpl;
 
@@ -343,6 +346,98 @@ public class ChatClient implements IChatClient {
 		}
 
 		throw new IOException(exceptionPreamble + " resulted in unexpected response: " + html);
+	}
+
+	@Override
+	public List<UserInfo> getUserInfo(int roomId, List<Integer> userIds) throws IOException {
+		//@formatter:off
+		var url = baseUri()
+			.setPath("user/info")
+		.toString();
+
+		var idsCommaSeparated = userIds.stream()
+			.map(Object::toString)
+		.collect(Collectors.joining(","));
+
+		var response = http.post(url,
+			"ids", idsCommaSeparated,
+			"roomId", roomId
+		);
+		//@formatter:on
+
+		var usersNode = response.getBodyAsJson().get("users");
+		if (usersNode == null || !usersNode.isArray()) {
+			return List.of();
+		}
+
+		//@formatter:off
+		return JsonUtils.streamArray(usersNode)
+			.map(n -> parseUserInfo(roomId, n))
+		.toList();
+		//@formatter:on
+	}
+
+	private UserInfo parseUserInfo(int roomId, JsonNode userNode) {
+		var builder = new UserInfo.Builder();
+
+		builder.roomId(roomId);
+
+		var node = userNode.get("id");
+		if (node != null) {
+			builder.userId(node.asInt());
+		}
+
+		node = userNode.get("name");
+		if (node != null) {
+			builder.username(node.asText());
+		}
+
+		node = userNode.get("email_hash");
+		if (node != null) {
+			String profilePicture;
+			var emailHash = node.asText();
+			if (emailHash.startsWith("!")) {
+				profilePicture = emailHash.substring(1);
+			} else {
+				//@formatter:off
+				profilePicture = new URIBuilder()
+					.setScheme("https")
+					.setHost("www.gravatar.com")
+					.setPathSegments("avatar", emailHash)
+					.setParameter("d", "identicon")
+					.setParameter("s", "128")
+				.toString();
+				//@formatter:on
+			}
+			builder.profilePicture(profilePicture);
+		}
+
+		node = userNode.get("reputation");
+		if (node != null) {
+			builder.reputation(node.asInt());
+		}
+
+		node = userNode.get("is_moderator");
+		if (node != null) {
+			builder.moderator(node.asBoolean());
+		}
+
+		node = userNode.get("is_owner");
+		if (node != null) {
+			builder.owner(node.asBoolean());
+		}
+
+		node = userNode.get("last_post");
+		if (node != null) {
+			builder.lastPost(WebSocketEventParsers.timestamp(node.asLong()));
+		}
+
+		node = userNode.get("last_seen");
+		if (node != null) {
+			builder.lastSeen(WebSocketEventParsers.timestamp(node.asLong()));
+		}
+
+		return builder.build();
 	}
 
 	@Override

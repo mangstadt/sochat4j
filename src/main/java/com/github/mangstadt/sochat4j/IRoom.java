@@ -107,12 +107,25 @@ public interface IRoom extends Closeable {
 	void deleteMessage(long messageId) throws IOException;
 
 	/**
-	 * Gets information about room users, such as their reputation and username.
-	 * @param userIds the user ID(s)
+	 * Gets information about multiple room users, such as their reputation and
+	 * username.
+	 * @param userIds the user IDs
 	 * @return the user information
 	 * @throws IOException if there's a problem executing the request
 	 */
 	List<UserInfo> getUserInfo(List<Integer> userIds) throws IOException;
+
+	/**
+	 * Gets information about a single room user, such as their reputation and
+	 * username.
+	 * @param userId the user ID
+	 * @return the user information
+	 * @throws IOException if there's a problem executing the request
+	 */
+	default UserInfo getUserInfo(int userId) throws IOException {
+		var info = getUserInfo(List.of(userId));
+		return info.isEmpty() ? null : info.get(0);
+	}
 
 	/**
 	 * <p>

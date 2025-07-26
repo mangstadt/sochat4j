@@ -193,7 +193,7 @@ public class Room implements IRoom {
 					 * See: https://chat.stackoverflow.com/transcript/message/
 					 * 57407855#57407855
 					 */
-					logger.atWarn().setCause(t).log(() -> "[room=" + roomId + "]: Web socket abrubtly disconnected. Attempting to reconnect.");
+					logger.atWarn().setCause(t).log(() -> "[room=" + roomId + "]: Web socket abruptly disconnected. Attempting to reconnect.");
 					alreadyReconnected = true;
 					try {
 						synchronized (Room.this) {

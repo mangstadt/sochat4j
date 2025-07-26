@@ -4,6 +4,7 @@ import static java.util.function.Function.identity;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.net.ProtocolException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URISyntaxException;
@@ -59,9 +60,6 @@ public class Room implements IRoom {
 	private static final Logger logger = LoggerFactory.getLogger(Room.class);
 	private static final int MAX_MESSAGE_LENGTH = 500;
 
-	private static final int MAX_WEBSOCKET_REFRESH_ATTEMPTS = 3;
-	private static final Duration PAUSE_BETWEEN_WEBSOCKET_REFRESH_ATTEMPTS = Duration.ofSeconds(10);
-
 	private static final int CLOSE_NORMAL = 1000;
 	private static final int CLOSE_GOING_AWAY = 1001;
 
@@ -71,6 +69,7 @@ public class Room implements IRoom {
 	private final Http http;
 	private final ChatClient chatClient;
 	private WebSocket webSocket;
+	private WebSocketListenerImpl webSocketListener = new WebSocketListenerImpl();
 
 	private final WebSocketClient webSocketClient;
 	private final Duration webSocketRefreshFrequency;
@@ -95,8 +94,8 @@ public class Room implements IRoom {
 	 * to be called by {@link ChatClient#joinRoom}.
 	 * @param roomId the room ID
 	 * @param http the HTTP client
-	 * @param webSocketClient the web socket client
-	 * @param webSocketRefreshFrequency how often the room's web socket
+	 * @param webSocketClient the websocket client
+	 * @param webSocketRefreshFrequency how often the room's websocket
 	 * connection is reset to address disconnects that randomly occur
 	 * @param chatClient the {@link ChatClient} object that created this
 	 * connection
@@ -165,105 +164,26 @@ public class Room implements IRoom {
 		//@formatter:on
 	}
 
+	/**
+	 * Connects to the room's websocket.
+	 * @throws IOException if there's a problem getting the websocket URI. Any
+	 * errors connecting to the websocket are handled by the WebSocketListener
+	 * object.
+	 */
 	private void connectToWebSocket() throws IOException {
 		var wsUri = getWebSocketUri();
 		var origin = baseUrl().toString();
 
-		logger.atInfo().log(() -> "Connecting to web socket [room=" + roomId + "]: " + wsUri);
+		logger.atInfo().log(() -> "Connecting to websocket [room=" + roomId + "]: " + wsUri);
 
-		webSocket = webSocketClient.connect(wsUri, origin, new WebSocketListener() {
-			private boolean alreadyReconnected = false;
-
-			@Override
-			public void onMessage(WebSocket webSocket, String text) {
-				handleWebSocketMessage(text);
-			}
-
-			@Override
-			public void onFailure(WebSocket webSocket, Throwable t, okhttp3.Response response) {
-				if (t instanceof EOFException || t instanceof SocketException || t instanceof SocketTimeoutException) {
-					/*
-					 * If any of these exceptions are thrown, reconnect to the
-					 * web socket.
-					 * 
-					 * The web socket will sometimes abruptly disconnect for
-					 * some unknown reason. This has been a long-running issue
-					 * that began occurring more frequently in early June 2024.
-					 * 
-					 * See: https://chat.stackoverflow.com/transcript/message/
-					 * 57407855#57407855
-					 */
-					logger.atWarn().setCause(t).log(() -> "[room=" + roomId + "]: Web socket abruptly disconnected. Attempting to reconnect.");
-					alreadyReconnected = true;
-					try {
-						synchronized (Room.this) {
-							connectToWebSocket();
-						}
-					} catch (IOException e) {
-						/*
-						 * Wait a bit, then try a second time *shrug*.
-						 */
-						logger.atWarn().setCause(e).log(() -> "[room=" + roomId + "]: Web socket reconnection attempt failed. Waiting 10 seconds, then trying one more time.");
-						Sleeper.sleep(Duration.ofSeconds(10));
-						try {
-							synchronized (Room.this) {
-								connectToWebSocket();
-							}
-						} catch (IOException e2) {
-							logger.atError().setCause(e2).log(() -> "[room=" + roomId + "]: Problem reconnecting to web socket. Leaving room.");
-							leave();
-						}
-					}
-				} else {
-					logger.atError().setCause(t).log(() -> "[room=" + roomId + "]: Problem with web socket. Leaving room.");
-					leave();
-				}
-			}
-
-			@Override
-			public void onClosed(WebSocket webSocket, int code, String reason) {
-				//Invoked when both peers have indicated that no more messages will be transmitted and the connection has been successfully released.
-				logger.atError().log(() -> "[room=" + roomId + "]: Web socket closed. Reason=" + reason + ". Code=" + code);
-
-				attemptToReconnect(reason);
-			}
-
-			@Override
-			public void onClosing(WebSocket webSocket, int code, String reason) {
-				//Invoked when the remote peer has indicated that no more incoming messages will be transmitted.
-				logger.atError().log(() -> "[room=" + roomId + "]: Web socket closed by server. Reason=" + reason + ". Code=" + code);
-
-				attemptToReconnect(reason);
-			}
-
-			private void attemptToReconnect(String reason) {
-				if (alreadyReconnected) {
-					return;
-				}
-
-				if ("CloudFlare WebSocket proxy restarting".equals(reason)) {
-					alreadyReconnected = true;
-
-					logger.atWarn().log(() -> "[room=" + roomId + "]: Web socket closed by CloudFlare. Attempting to reconnect.");
-					try {
-						synchronized (Room.this) {
-							connectToWebSocket();
-						}
-					} catch (IOException e) {
-						logger.atError().setCause(e).log(() -> "[room=" + roomId + "]: Problem reconnecting to web socket. Leaving room.");
-						leave();
-					}
-				}
-			}
-		});
-
-		logger.atInfo().log(() -> "Web socket connection successful [room=" + roomId + "]: " + wsUri);
+		webSocket = webSocketClient.connect(wsUri, origin, webSocketListener);
 	}
 
 	/**
 	 * Creates a timer that recreates the websocket connection periodically.
 	 * This is an attempt to fix the issue where every couple days, the bot
-	 * will stop responding to messages.
+	 * will stop responding to messages due to the websocket connection going
+	 * bad.
 	 */
 	private void createWebSocketRefreshTimer() {
 		var period = webSocketRefreshFrequency.toMillis();
@@ -273,23 +193,13 @@ public class Room implements IRoom {
 				synchronized (Room.this) {
 					logger.atInfo().log(() -> "[room=" + roomId + "]: Recreating websocket connection.");
 
+					webSocketListener.gracefulClosure = true;
 					webSocket.close(CLOSE_NORMAL, "");
-
-					var connected = false;
-					var attempts = 0;
-					while (!connected && attempts < MAX_WEBSOCKET_REFRESH_ATTEMPTS) {
-						try {
-							attempts++;
-							connectToWebSocket();
-							connected = true;
-						} catch (IOException e) {
-							logger.atError().setCause(e).log(() -> "[room=" + roomId + "]: Could not recreate websocket session. Trying again in " + PAUSE_BETWEEN_WEBSOCKET_REFRESH_ATTEMPTS.getSeconds() + " seconds.");
-							Sleeper.sleep(PAUSE_BETWEEN_WEBSOCKET_REFRESH_ATTEMPTS);
-						}
-					}
-
-					if (!connected) {
-						logger.atError().log(() -> "[room=" + roomId + "]: Could not recreate websocket session after " + MAX_WEBSOCKET_REFRESH_ATTEMPTS + " tries. Leaving the room.");
+					webSocketListener.gracefulClosure = false;
+					try {
+						connectToWebSocket();
+					} catch (IOException e) {
+						logger.atError().setCause(e).log(() -> "[room=" + roomId + "]: Problem getting websocket URI from chat room. Leaving room.");
 						leave();
 					}
 				}
@@ -326,7 +236,7 @@ public class Room implements IRoom {
 
 		var wsUrlNode = response.getBodyAsJson().get("url");
 		if (wsUrlNode == null) {
-			throw new IOException("Web socket URL missing from response.");
+			throw new IOException("Websocket URL missing from response.");
 		}
 
 		var wsUrl = wsUrlNode.asText();
@@ -336,7 +246,7 @@ public class Room implements IRoom {
 		var time = (latest == null) ? 0 : latest.getTimestamp().toEpochSecond(ZoneOffset.UTC);
 
 		/*
-		 * HttpUrl.parse() returns null because the web socket URI has a
+		 * HttpUrl.parse() returns null because the websocket URI has a
 		 * non-HTTP scheme.
 		 */
 		try {
@@ -346,12 +256,12 @@ public class Room implements IRoom {
 			.toString();
 			//@formatter:on
 		} catch (URISyntaxException e) {
-			throw new IOException("Web socket URL is not a valid URI: " + wsUrl, e);
+			throw new IOException("Websocket URL is not a valid URI: " + wsUrl, e);
 		}
 	}
 
 	/**
-	 * Handles web socket messages.
+	 * Handles websocket messages.
 	 * @param json the content of the message (formatted as a JSON object)
 	 */
 	private void handleWebSocketMessage(String json) {
@@ -359,7 +269,7 @@ public class Room implements IRoom {
 		try {
 			node = JsonUtils.parse(json);
 		} catch (JsonProcessingException e) {
-			logger.atError().setCause(e).log(() -> "[room " + roomId + "]: Problem parsing JSON from web socket:\n" + json);
+			logger.atError().setCause(e).log(() -> "[room " + roomId + "]: Problem parsing JSON from websocket:\n" + json);
 			return;
 		}
 
@@ -759,6 +669,7 @@ public class Room implements IRoom {
 	public void close() throws IOException {
 		synchronized (this) {
 			websocketReconnectTimer.cancel();
+			webSocketListener.gracefulClosure = true;
 			webSocket.close(CLOSE_GOING_AWAY, "");
 		}
 	}
@@ -789,6 +700,95 @@ public class Room implements IRoom {
 
 			var seconds = m.find() ? Integer.parseInt(m.group(0)) : 5;
 			return Duration.ofSeconds(seconds);
+		}
+	}
+
+	/**
+	 * This implementation attempts to reconnect to the websocket when
+	 * unexpected failures occur.
+	 * @see "https://square.github.io/okhttp/5.x/okhttp/okhttp3/-web-socket-listener/index.html"
+	 */
+	private class WebSocketListenerImpl extends WebSocketListener {
+		private int reconnectionAttempts = 0;
+		private boolean gracefulClosure = false;
+		private final int maxReconnectionAttempts = 5;
+
+		@Override
+		public void onOpen(WebSocket webSocket, okhttp3.Response response) {
+			reconnectionAttempts = 0;
+		}
+
+		@Override
+		public void onMessage(WebSocket webSocket, String text) {
+			handleWebSocketMessage(text);
+		}
+
+		@Override
+		public void onFailure(WebSocket webSocket, Throwable t, okhttp3.Response response) {
+			if (t instanceof EOFException || t instanceof SocketException || t instanceof SocketTimeoutException | t instanceof ProtocolException) {
+				/*
+				 * If any of these exceptions are thrown, reconnect to the
+				 * websocket.
+				 * 
+				 * The websocket will sometimes abruptly disconnect for
+				 * some unknown reason. This has been a long-running issue
+				 * that began occurring more frequently in early June 2024.
+				 * 
+				 * See: https://chat.stackoverflow.com/transcript/message/
+				 * 57407855#57407855
+				 */
+				logger.atError().setCause(t).log(() -> "[room=" + roomId + "]: Websocket abruptly disconnected.");
+				attemptToReconnect();
+			} else {
+				logger.atError().setCause(t).log(() -> "[room=" + roomId + "]: Unrecoverable problem with websocket. Leaving room.");
+				leave();
+			}
+		}
+
+		/**
+		 * Invoked when both peers have indicated that no more messages will
+		 * be transmitted and the connection has been successfully released.
+		 * No further calls to this listener will be made.
+		 */
+		@Override
+		public void onClosed(WebSocket webSocket, int code, String reason) {
+			if (gracefulClosure) {
+				return;
+			}
+
+			logger.atError().log(() -> "[room=" + roomId + "]: Websocket closed by server. Reason=\"" + reason + "\" Code=" + code);
+			attemptToReconnect();
+		}
+
+		/**
+		 * Invoked when the remote peer has indicated that no more incoming
+		 * messages will be transmitted.
+		 */
+		@Override
+		public void onClosing(WebSocket webSocket, int code, String reason) {
+			logger.atError().log(() -> "[room=" + roomId + "]: Websocket is being closed by the server. Reason=\"" + reason + "\" Code=" + code);
+		}
+
+		private void attemptToReconnect() {
+			if (reconnectionAttempts >= maxReconnectionAttempts) {
+				logger.atError().log(() -> "[room=" + roomId + "]: Unable to reconnect to websocket after " + reconnectionAttempts + " attempts. Leaving room.");
+				leave();
+				return;
+			}
+
+			var sleepSeconds = (reconnectionAttempts + 1) * 10;
+			logger.atError().log(() -> "[room=" + roomId + "]: Attempting to reconnect websocket in " + sleepSeconds + " seconds.");
+			Sleeper.sleep(Duration.ofSeconds(sleepSeconds));
+
+			try {
+				reconnectionAttempts++;
+				synchronized (Room.this) {
+					connectToWebSocket();
+				}
+			} catch (IOException e) {
+				logger.atError().setCause(e).log(() -> "[room=" + roomId + "]: Problem getting websocket URI from chat room. Leaving room.");
+				leave();
+			}
 		}
 	}
 }

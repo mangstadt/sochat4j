@@ -135,6 +135,22 @@ public class ChatMessage {
 		return stars;
 	}
 
+	/**
+	 * Determines if the given user is mentioned in the message.
+	 * @param userId the user ID
+	 * @param username the username
+	 * @return true if the user is mentioned, false if not
+	 */
+	public boolean isUserMentioned(int userId, String username) {
+		/*
+		 * For direct replies, mentionedUserId is set to the author of the
+		 * parent message--the message content of replies do not contain the
+		 * username of the author of the parent message (unless the author of
+		 * the reply decided to include a mention in their message)
+		 */
+		return mentionedUserId == userId || content.isMentioned(username);
+	}
+
 	@Override
 	public String toString() {
 		return "ChatMessage [timestamp=" + timestamp + ", messageId=" + messageId + ", parentMessageId=" + parentMessageId + ", userId=" + userId + ", username=" + username + ", mentionedUserId=" + mentionedUserId + ", roomId=" + roomId + ", roomName=" + roomName + ", content=" + content + ", edits=" + edits + ", stars=" + stars + "]";

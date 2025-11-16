@@ -399,12 +399,7 @@ public class Room implements IRoom {
 	}
 
 	@Override
-	public long sendMessage(String message) throws IOException {
-		return sendMessage(message, SplitStrategy.NONE).get(0);
-	}
-
-	@Override
-	public List<Long> sendMessage(String message, SplitStrategy splitStrategy) throws IOException {
+	public List<Long> sendMessage(String message, long parentId, SplitStrategy splitStrategy) throws IOException {
 		if (!canPost) {
 			throw new RoomPermissionException(roomId);
 		}
@@ -423,14 +418,18 @@ public class Room implements IRoom {
 		.toString();
 		//@formatter:on
 
+		var firstPart = true;
 		var messageIds = new ArrayList<Long>(parts.size());
 		for (var part : parts) {
 			//@formatter:off
-			var response = http.post(url, new RateLimit409Handler(),
-				"text", part,
-				"fkey", fkey
-			);
+			var parameters = (parentId > 0 && firstPart) ?
+				new Object[] { "text", part, "fkey", fkey, "parentId", parentId } :
+				new Object[] { "text", part, "fkey", fkey };
 			//@formatter:on
+
+			firstPart = false;
+
+			var response = http.post(url, new RateLimit409Handler(), parameters);
 
 			if (response.getStatusCode() == 404) {
 				/*
@@ -523,17 +522,18 @@ public class Room implements IRoom {
 	}
 
 	@Override
-	public void editMessage(long messageId, String updatedMessage) throws IOException {
+	public void editMessage(long messageId, long parentId, String updatedMessage) throws IOException {
 		//@formatter:off
 		var url = baseUrl()
 			.addPathSegments("messages/" + messageId)
 		.toString();
 
-		var response = http.post(url, new RateLimit409Handler(),
-			"text", updatedMessage,
-			"fkey", fkey
-		);
+		var parameters = (parentId > 0) ?
+			new Object[] { "text", updatedMessage, "fkey", fkey, "parentId", parentId } :
+			new Object[] { "text", updatedMessage, "fkey", fkey };
 		//@formatter:on
+
+		var response = http.post(url, new RateLimit409Handler(), parameters);
 
 		var statusCode = response.getStatusCode();
 		if (statusCode == 302) {

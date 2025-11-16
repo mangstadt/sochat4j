@@ -1007,6 +1007,34 @@ class RoomTest {
 	}
 
 	@Test
+	void sendMessage_reply() throws Exception {
+		//@formatter:off
+		var httpClient = new MockHttpClientBuilder()
+			.login(Site.STACKOVERFLOW, "0123456789abcdef0123456789abcdef", "email", "password", true, "Username", 12345)
+			.joinRoom(Site.STACKOVERFLOW, 1, "0123456789abcdef0123456789abcdef", "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247", 1417023460)
+
+			.requestPost("https://chat.stackoverflow.com/chats/1/messages/new",
+				"text", "one",
+				"fkey", "0123456789abcdef0123456789abcdef",
+				"parentId", "123"
+			)
+			.responseOk(ResponseSamples.newMessage(1))
+		.build();
+		//@formatter:on
+
+		var expectedWsUrl = "wss://chat.sockets.stackexchange.com/events/1/37516a6eb3464228bf48a33088b3c247?l=" + webSocketTimestamp(1417023460);
+		var wsServer = new MockWebSocketServer(Site.STACKOVERFLOW, expectedWsUrl);
+		var wsClient = wsServer.getClient();
+
+		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsClient);
+		chatClient.login("email", "password");
+		var room = chatClient.joinRoom(1);
+		assertEquals(1, room.sendMessage("one", 123));
+
+		verifyNumberOfRequestsSent(httpClient, 7);
+	}
+
+	@Test
 	void sendMessage_split_strategy() throws Exception {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()
@@ -1239,12 +1267,12 @@ class RoomTest {
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
 
-		room.editMessage(20157247, "edited");
-		assertThrows(IOException.class, () -> room.editMessage(20157247, "edited"));
-		assertThrows(IOException.class, () -> room.editMessage(20157247, "edited"));
-		assertThrows(IOException.class, () -> room.editMessage(20157247, "edited"));
-		assertThrows(IOException.class, () -> room.editMessage(20157247, "edited"));
-		room.editMessage(20157247, "edited");
+		room.editMessage(20157247, 0, "edited");
+		assertThrows(IOException.class, () -> room.editMessage(20157247, 0, "edited"));
+		assertThrows(IOException.class, () -> room.editMessage(20157247, 0, "edited"));
+		assertThrows(IOException.class, () -> room.editMessage(20157247, 0, "edited"));
+		assertThrows(IOException.class, () -> room.editMessage(20157247, 0, "edited"));
+		room.editMessage(20157247, 0, "edited");
 
 		verifyNumberOfRequestsSent(httpClient, 12);
 	}

@@ -63,7 +63,23 @@ public interface IRoom extends Closeable {
 	 * post messages to the room
 	 * @throws IOException if there's a problem executing the request
 	 */
-	long sendMessage(String message) throws RoomPermissionException, IOException;
+	default long sendMessage(String message) throws RoomPermissionException, IOException {
+		return sendMessage(message, SplitStrategy.NONE).get(0);
+	}
+
+	/**
+	 * Posts a message to the room. If the message exceeds the max message size,
+	 * it will be truncated.
+	 * @param message the message to post
+	 * @param parentId the ID of the message that is being replied to
+	 * @return the ID of the new message
+	 * @throws RoomPermissionException if the user doesn't have permission to
+	 * post messages to the room
+	 * @throws IOException if there's a problem executing the request
+	 */
+	default long sendMessage(String message, long parentId) throws RoomPermissionException, IOException {
+		return sendMessage(message, parentId, SplitStrategy.NONE).get(0);
+	}
 
 	/**
 	 * Posts a message to the room.
@@ -77,7 +93,24 @@ public interface IRoom extends Closeable {
 	 * post messages to the room
 	 * @throws IOException if there's a problem executing the request
 	 */
-	List<Long> sendMessage(String message, SplitStrategy splitStrategy) throws RoomPermissionException, IOException;
+	default List<Long> sendMessage(String message, SplitStrategy splitStrategy) throws RoomPermissionException, IOException {
+		return sendMessage(message, 0, splitStrategy);
+	}
+
+	/**
+	 * Posts a message to the room.
+	 * @param message the message to post
+	 * @param parentId the ID of the message that is being replied to
+	 * @param splitStrategy defines how the message should be split up into
+	 * multiple posts if the message exceeds the chat connection's max message
+	 * size
+	 * @return the ID(s) of the new message(s). This list will contain multiple
+	 * IDs if the message was split up into multiple messages.
+	 * @throws RoomPermissionException if the user doesn't have permission to
+	 * post messages to the room
+	 * @throws IOException if there's a problem executing the request
+	 */
+	List<Long> sendMessage(String message, long parentId, SplitStrategy splitStrategy) throws RoomPermissionException, IOException;
 
 	/**
 	 * <p>
@@ -88,10 +121,12 @@ public interface IRoom extends Closeable {
 	 * cannot be edited.
 	 * </p>
 	 * @param messageId the ID of the message to edit
+	 * @param parentId the ID of the message that this was a reply to, or 0 if
+	 * it's not a reply
 	 * @param content the updated message content
 	 * @throws IOException if there's a problem executing the request
 	 */
-	void editMessage(long messageId, String content) throws IOException;
+	void editMessage(long messageId, long parentId, String content) throws IOException;
 
 	/**
 	 * <p>

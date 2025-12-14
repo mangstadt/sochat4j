@@ -4,111 +4,29 @@ import java.time.LocalDateTime;
 
 /**
  * Contains information about a chat user.
+ * @param userId the user ID
+ * @param roomId the room ID of the room that this user info came from
+ * @param username the username
+ * @param profilePicture the URL of the user's profile picture
+ * @param reputation the user's reputation score
+ * @param moderator true if the user is a moderator, false if not
+ * @param owner true if the user is a room owner, false if not
+ * @param lastSeen the time the user was last seen in the room that this user
+ * info came from
+ * @param lastPost the time the user last posted in the room that this user info
+ * came from
  * @author Michael Angstadt
  */
-public class UserInfo {
-	private final int userId;
-	private final int roomId;
-	private final String username;
-	private final String profilePicture;
-	private final int reputation;
-	private final boolean moderator;
-	private final boolean owner;
-	private final LocalDateTime lastSeen;
-	private final LocalDateTime lastPost;
-
-	private UserInfo(Builder builder) {
-		userId = builder.userId;
-		roomId = builder.roomId;
-		username = builder.username;
-		profilePicture = builder.profilePicture;
-		reputation = builder.reputation;
-		moderator = builder.moderator;
-		owner = builder.owner;
-		lastSeen = builder.lastSeen;
-		lastPost = builder.lastPost;
-	}
+public record UserInfo(int userId, int roomId, String username, String profilePicture, int reputation, boolean moderator, boolean owner, LocalDateTime lastSeen, LocalDateTime lastPost) {
 
 	/**
-	 * Gets the user ID.
-	 * @return the user ID
+	 * Gets the URL of the user's profile picture. For users without a profile
+	 * picture, this will return a URL to a picture that was auto-generated
+	 * based on a hash of the user's email address.
+	 * @return the profile picture URL
 	 */
-	public int getUserId() {
-		return userId;
-	}
-
-	/**
-	 * Gets the room that this user information came from.
-	 * @return the room ID
-	 */
-	public int getRoomId() {
-		return roomId;
-	}
-
-	/**
-	 * Gets the username.
-	 * @return the username
-	 */
-	public String getUsername() {
-		return username;
-	}
-
-	/**
-	 * Gets the URL to the profile picture. For users without a profile picture,
-	 * this will return a URL to the picture that was auto-generated based on a
-	 * hash of the user's email address.
-	 * @return the URL to the profile picture
-	 */
-	public String getProfilePicture() {
+	public String profilePicture() {
 		return profilePicture;
-	}
-
-	/**
-	 * Gets the user's reputation score.
-	 * @return the reputation
-	 */
-	public int getReputation() {
-		return reputation;
-	}
-
-	/**
-	 * Gets whether the user is a moderator or not.
-	 * @return true if the user is a moderator, false if not
-	 */
-	public boolean isModerator() {
-		return moderator;
-	}
-
-	/**
-	 * Gets whether the user is an owner of the room that this user information
-	 * came from
-	 * @return true if the user is a room owner, false if not
-	 */
-	public boolean isOwner() {
-		return owner;
-	}
-
-	/**
-	 * Gets the time the user was last seen in the room that this user
-	 * information came from.
-	 * @return the last seen time
-	 */
-	public LocalDateTime getLastSeen() {
-		return lastSeen;
-	}
-
-	/**
-	 * Gets the time the user last posted in the room that this user information
-	 * came from.
-	 * @return the last post time
-	 */
-	public LocalDateTime getLastPost() {
-		return lastPost;
-	}
-
-	@Override
-	public String toString() {
-		return "UserInfo [userId=" + userId + ", username=" + username + ", profilePicture=" + profilePicture + ", reputation=" + reputation + ", moderator=" + moderator + ", owner=" + owner + ", lastSeen=" + lastSeen + ", lastPost=" + lastPost + "]";
 	}
 
 	public static class Builder {
@@ -168,7 +86,7 @@ public class UserInfo {
 		}
 
 		public UserInfo build() {
-			return new UserInfo(this);
+			return new UserInfo(userId, roomId, username, profilePicture, reputation, moderator, owner, lastSeen, lastPost);
 		}
 	}
 }

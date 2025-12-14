@@ -1,138 +1,33 @@
 package com.github.mangstadt.sochat4j;
 
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 /**
  * Represents a chat message. Use its {@link Builder} class to construct new
  * instances.
+ * @param timestamp the time the message was posted or last edited
+ * @param messageId the message ID. This ID is unique across all chat rooms
+ * @param parentMessageId the parent message ID or 0 if this message is not a
+ * reply
+ * @param userId the user ID of the message author
+ * @param username the username of the message author
+ * @param mentionedUserId the user ID of the first user that was mentioned in
+ * the message or 0 if nobody was mentioned
+ * @param roomId the room ID of the room that this message was posted in
+ * @param roomName the room name of the room that this message was posted in
+ * @param content the message content or null if the message was deleted
+ * @param edits the number of times the message was edited
+ * @param stars the number of stars the message has
  * @author Michael Angstadt
  */
-public class ChatMessage {
-	private final LocalDateTime timestamp;
-
-	private final long messageId;
-	private final long parentMessageId;
-
-	private final int userId;
-	private final String username;
-	private final int mentionedUserId;
-
-	private final int roomId;
-	private final String roomName;
-
-	private final Content content;
-
-	private final int edits;
-	private final int stars;
-
-	private ChatMessage(Builder builder) {
-		timestamp = builder.timestamp;
-
-		messageId = builder.messageId;
-		parentMessageId = builder.parentMessageId;
-
-		userId = builder.userId;
-		username = builder.username;
-		mentionedUserId = builder.mentionedUserId;
-
-		roomId = builder.roomId;
-		roomName = builder.roomName;
-
-		content = builder.content;
-
-		edits = builder.edits;
-		stars = builder.stars;
-	}
+public record ChatMessage(LocalDateTime timestamp, long messageId, long parentMessageId, int userId, String username, int mentionedUserId, int roomId, String roomName, Content content, int edits, int stars) {
 
 	/**
-	 * Gets the timestamp the message was posted or modified.
-	 * @return the timestamp
+	 * Determines if the message was deleted.
+	 * @return true if the message was deleted, false if not
 	 */
-	public LocalDateTime getTimestamp() {
-		return timestamp;
-	}
-
-	/**
-	 * Gets the ID of the message. This ID is unique across all chat rooms.
-	 * @return the ID
-	 */
-	public long getMessageId() {
-		return messageId;
-	}
-
-	/**
-	 * Gets the ID of the message that this message is replying to.
-	 * @return the parent message ID or 0 if this message is not a reply
-	 */
-	public long getParentMessageId() {
-		return parentMessageId;
-	}
-
-	/**
-	 * Gets the user ID of the message author.
-	 * @return the user ID
-	 */
-	public int getUserId() {
-		return userId;
-	}
-
-	/**
-	 * Gets the username of the message author.
-	 * @return the username
-	 */
-	public String getUsername() {
-		return username;
-	}
-
-	/**
-	 * Gets the ID of the user that was mentioned in the message content. If a
-	 * message contains multiple mentions, only the ID of the first mentioned
-	 * user is returned by the API.
-	 * @return the ID of the mentioned user or 0 if nobody was mentioned
-	 */
-	public int getMentionedUserId() {
-		return mentionedUserId;
-	}
-
-	/**
-	 * Gets the ID of the room the message is currently in.
-	 * @return the room ID
-	 */
-	public int getRoomId() {
-		return roomId;
-	}
-
-	/**
-	 * Gets the name of the room the message is currently in.
-	 * @return the room name
-	 */
-	public String getRoomName() {
-		return roomName;
-	}
-
-	/**
-	 * Gets the message content.
-	 * @return the content or null if the author deleted the message
-	 */
-	public Content getContent() {
-		return content;
-	}
-
-	/**
-	 * Gets the number of times the message was edited.
-	 * @return the number of times the message was edited
-	 */
-	public int getEdits() {
-		return edits;
-	}
-
-	/**
-	 * Gets the number of stars the message has.
-	 * @return the number of stars
-	 */
-	public int getStars() {
-		return stars;
+	public boolean isMessageDeleted() {
+		return content == null;
 	}
 
 	/**
@@ -143,31 +38,14 @@ public class ChatMessage {
 	 */
 	public boolean isUserMentioned(int userId, String username) {
 		/*
-		 * For direct replies, mentionedUserId is set to the author of the
-		 * parent message--the message content of replies do not contain the
-		 * username of the author of the parent message (unless the author of
-		 * the reply decided to include a mention in their message)
+		 * For direct replies:
+		 * 
+		 * 1. "mentionedUserId" is set to the author of the parent message.
+		 * 
+		 * 2. Despite what is shown in the chat UI, the message content does
+		 * NOT begin with an @ mention of the parent message author.
 		 */
 		return mentionedUserId == userId || content.isMentioned(username);
-	}
-
-	@Override
-	public String toString() {
-		return "ChatMessage [timestamp=" + timestamp + ", messageId=" + messageId + ", parentMessageId=" + parentMessageId + ", userId=" + userId + ", username=" + username + ", mentionedUserId=" + mentionedUserId + ", roomId=" + roomId + ", roomName=" + roomName + ", content=" + content + ", edits=" + edits + ", stars=" + stars + "]";
-	}
-
-	@Override
-	public int hashCode() {
-		return Objects.hash(content, edits, mentionedUserId, messageId, parentMessageId, roomId, roomName, stars, timestamp, userId, username);
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) return true;
-		if (obj == null) return false;
-		if (getClass() != obj.getClass()) return false;
-		ChatMessage other = (ChatMessage) obj;
-		return Objects.equals(content, other.content) && edits == other.edits && mentionedUserId == other.mentionedUserId && messageId == other.messageId && parentMessageId == other.parentMessageId && roomId == other.roomId && Objects.equals(roomName, other.roomName) && stars == other.stars && Objects.equals(timestamp, other.timestamp) && userId == other.userId && Objects.equals(username, other.username);
 	}
 
 	/**
@@ -362,7 +240,7 @@ public class ChatMessage {
 		 * @return the built object
 		 */
 		public ChatMessage build() {
-			return new ChatMessage(this);
+			return new ChatMessage(timestamp, messageId, parentMessageId, userId, username, mentionedUserId, roomId, roomName, content, edits, stars);
 		}
 	}
 }

@@ -254,7 +254,7 @@ public class Room implements IRoom {
 
 		var messages = getMessages(1);
 		var latest = messages.isEmpty() ? null : messages.get(0);
-		var time = (latest == null) ? 0 : latest.getTimestamp().toEpochSecond(ZoneOffset.UTC);
+		var time = (latest == null) ? 0 : latest.timestamp().toEpochSecond(ZoneOffset.UTC);
 
 		/*
 		 * HttpUrl.parse() returns null because the websocket URI has a

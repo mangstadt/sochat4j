@@ -52,7 +52,7 @@ public class MessageEditedEvent extends Event {
 		 */
 		public Builder message(ChatMessage message) {
 			this.message = message;
-			this.timestamp = message.getTimestamp();
+			this.timestamp = message.timestamp();
 			return this;
 		}
 

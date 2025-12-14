@@ -225,7 +225,7 @@ class WebSocketEventParsers {
 			var messagePostedEvent = WebSocketEventParsers.messagePosted(event);
 			var message = messagePostedEvent.getMessage();
 
-			var m = messagesMovedOutRegex.matcher(message.getContent().getContent());
+			var m = messagesMovedOutRegex.matcher(message.content().getContent());
 			if (!m.find()) {
 				continue;
 			}
@@ -234,10 +234,10 @@ class WebSocketEventParsers {
 			builder
 			.destRoomId(Integer.parseInt(m.group(1)))
 			.destRoomName(m.group(2))
-			.sourceRoomId(message.getRoomId())
-			.sourceRoomName(message.getRoomName())
-			.moverUserId(message.getUserId())
-			.moverUsername(message.getUsername())
+			.sourceRoomId(message.roomId())
+			.sourceRoomName(message.roomName())
+			.moverUserId(message.userId())
+			.moverUsername(message.username())
 			.eventId(messagePostedEvent.getEventId())
 			.timestamp(messagePostedEvent.getTimestamp());
 			//@formatter:on
@@ -302,7 +302,7 @@ class WebSocketEventParsers {
 			var messagePostedEvent = WebSocketEventParsers.messagePosted(event);
 			var message = messagePostedEvent.getMessage();
 
-			var m = messagesMovedInRegex.matcher(message.getContent().getContent());
+			var m = messagesMovedInRegex.matcher(message.content().getContent());
 			if (!m.find()) {
 				continue;
 			}
@@ -311,10 +311,10 @@ class WebSocketEventParsers {
 			builder
 			.sourceRoomId(Integer.parseInt(m.group(1)))
 			.sourceRoomName(m.group(2))
-			.destRoomId(message.getRoomId())
-			.destRoomName(message.getRoomName())
-			.moverUserId(message.getUserId())
-			.moverUsername(message.getUsername())
+			.destRoomId(message.roomId())
+			.destRoomName(message.roomName())
+			.moverUserId(message.userId())
+			.moverUsername(message.username())
 			.eventId(messagePostedEvent.getEventId())
 			.timestamp(messagePostedEvent.getTimestamp());
 			//@formatter:on
@@ -368,7 +368,7 @@ class WebSocketEventParsers {
 			 * event to fire on our end.
 			 */
 
-			var event = findMessageWithId(newMessageEvents, message.getMessageId());
+			var event = findMessageWithId(newMessageEvents, message.messageId());
 			if (event != null) {
 				newMessageEvents.remove(event);
 
@@ -376,7 +376,7 @@ class WebSocketEventParsers {
 				events.add(new MessagePostedEvent.Builder()
 					.message(message)
 					.eventId(eventId)
-					.timestamp(message.getTimestamp())
+					.timestamp(message.timestamp())
 					.build()
 				);
 				//@formatter:on
@@ -384,7 +384,7 @@ class WebSocketEventParsers {
 				continue;
 			}
 
-			event = findMessageWithId(editedMessageEvents, message.getMessageId());
+			event = findMessageWithId(editedMessageEvents, message.messageId());
 			if (event != null) {
 				editedMessageEvents.remove(event);
 
@@ -392,7 +392,7 @@ class WebSocketEventParsers {
 				events.add(new MessageEditedEvent.Builder()
 					.message(message)
 					.eventId(eventId)
-					.timestamp(message.getTimestamp())
+					.timestamp(message.timestamp())
 					.build()
 				);
 				//@formatter:on
@@ -442,28 +442,28 @@ class WebSocketEventParsers {
 			 * event to fire on our end.
 			 */
 
-			var event = findMessageWithId(newMessageEvents, message.getMessageId());
+			var event = findMessageWithId(newMessageEvents, message.messageId());
 			if (event != null) {
 				newMessageEvents.remove(event);
 
 				//@formatter:off
 				events.add(new MessagePostedEvent.Builder()
 					.eventId(eventId)
-					.timestamp(message.getTimestamp())
+					.timestamp(message.timestamp())
 					.message(message)
 					.build()
 				);
 				//@formatter:on
 			}
 
-			event = findMessageWithId(editedMessageEvents, message.getMessageId());
+			event = findMessageWithId(editedMessageEvents, message.messageId());
 			if (event != null) {
 				editedMessageEvents.remove(event);
 
 				//@formatter:off
 				events.add(new MessageEditedEvent.Builder()
 					.eventId(eventId)
-					.timestamp(message.getTimestamp())
+					.timestamp(message.timestamp())
 					.message(message)
 					.build()
 				);

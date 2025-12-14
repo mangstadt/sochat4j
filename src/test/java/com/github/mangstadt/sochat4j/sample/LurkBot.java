@@ -35,17 +35,17 @@ public class LurkBot {
 			room.addEventListener(e -> {
 				if (e instanceof MessageDeletedEvent event) {
 					ChatMessage message = event.getMessage();
-					System.out.println("Message by " + message.getUsername() + " was deleted.");
+					System.out.println("Message by " + message.username() + " was deleted.");
 				}
 
 				if (e instanceof MessageEditedEvent event) {
 					ChatMessage message = event.getMessage();
-					System.out.println("Message by " + message.getUsername() + " was edited: " + message.getContent().getContent());
+					System.out.println("Message by " + message.username() + " was edited: " + message.content().getContent());
 				}
 
 				if (e instanceof MessagePostedEvent event) {
 					ChatMessage message = event.getMessage();
-					System.out.println(message.getUsername() + " said: " + message.getContent().getContent());
+					System.out.println(message.username() + " said: " + message.content().getContent());
 				}
 
 				if (e instanceof MessagesMovedEvent event) {
@@ -54,7 +54,7 @@ public class LurkBot {
 
 				if (e instanceof MessageStarredEvent event) {
 					ChatMessage message = event.getMessage();
-					System.out.println("Message now has " + message.getStars() + " stars: " + message.getContent().getContent());
+					System.out.println("Message now has " + message.stars() + " stars: " + message.content().getContent());
 				}
 
 				if (e instanceof UserEnteredEvent event) {

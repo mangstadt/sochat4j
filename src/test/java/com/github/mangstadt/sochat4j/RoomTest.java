@@ -171,7 +171,7 @@ class RoomTest {
 		assertEquals("one", event.getMessage().content().getContent());
 		assertEquals(0, event.getMessage().edits());
 		assertEquals(0, event.getMessage().mentionedUserId());
-		assertEquals(20157245, event.getMessage().messageId());
+		assertEquals(20157245, event.getMessage().id());
 		assertEquals(0, event.getMessage().parentMessageId());
 		assertEquals(1, event.getMessage().roomId());
 		assertEquals("Sandbox", event.getMessage().roomName());
@@ -223,7 +223,7 @@ class RoomTest {
 		assertEquals("@Bob Howdy.", postedEvent.getMessage().content().getContent());
 		assertEquals(0, postedEvent.getMessage().edits());
 		assertEquals(100, postedEvent.getMessage().mentionedUserId());
-		assertEquals(20157245, postedEvent.getMessage().messageId());
+		assertEquals(20157245, postedEvent.getMessage().id());
 		assertEquals(20157230, postedEvent.getMessage().parentMessageId());
 		assertEquals(1, postedEvent.getMessage().roomId());
 		assertEquals("Sandbox", postedEvent.getMessage().roomName());
@@ -238,7 +238,7 @@ class RoomTest {
 		assertEquals("@Greg Sup.", editedEvent.getMessage().content().getContent());
 		assertEquals(1, editedEvent.getMessage().edits());
 		assertEquals(150, editedEvent.getMessage().mentionedUserId());
-		assertEquals(20157240, editedEvent.getMessage().messageId());
+		assertEquals(20157240, editedEvent.getMessage().id());
 		assertEquals(20157220, editedEvent.getMessage().parentMessageId());
 		assertEquals(1, editedEvent.getMessage().roomId());
 		assertEquals("Sandbox", editedEvent.getMessage().roomName());
@@ -290,7 +290,7 @@ class RoomTest {
 		assertEquals("@Bob Howdy.", postedEvent.getMessage().content().getContent());
 		assertEquals(0, postedEvent.getMessage().edits());
 		assertEquals(100, postedEvent.getMessage().mentionedUserId());
-		assertEquals(20157245, postedEvent.getMessage().messageId());
+		assertEquals(20157245, postedEvent.getMessage().id());
 		assertEquals(0, postedEvent.getMessage().parentMessageId());
 		assertEquals(1, postedEvent.getMessage().roomId());
 		assertEquals("Sandbox", postedEvent.getMessage().roomName());
@@ -305,7 +305,7 @@ class RoomTest {
 		assertEquals("@Greg Sup.", editedEvent.getMessage().content().getContent());
 		assertEquals(1, editedEvent.getMessage().edits());
 		assertEquals(150, editedEvent.getMessage().mentionedUserId());
-		assertEquals(20157240, editedEvent.getMessage().messageId());
+		assertEquals(20157240, editedEvent.getMessage().id());
 		assertEquals(0, editedEvent.getMessage().parentMessageId());
 		assertEquals(1, editedEvent.getMessage().roomId());
 		assertEquals("Sandbox", editedEvent.getMessage().roomName());
@@ -353,7 +353,7 @@ class RoomTest {
 		assertEquals("one", event.getMessage().content().getContent());
 		assertEquals(1, event.getMessage().edits());
 		assertEquals(0, event.getMessage().mentionedUserId());
-		assertEquals(20157245, event.getMessage().messageId());
+		assertEquals(20157245, event.getMessage().id());
 		assertEquals(0, event.getMessage().parentMessageId());
 		assertEquals(1, event.getMessage().roomId());
 		assertEquals("Sandbox", event.getMessage().roomName());
@@ -401,7 +401,7 @@ class RoomTest {
 		assertEquals("one", event.getMessage().content().getContent());
 		assertEquals(0, event.getMessage().edits());
 		assertEquals(0, event.getMessage().mentionedUserId());
-		assertEquals(20157245, event.getMessage().messageId());
+		assertEquals(20157245, event.getMessage().id());
 		assertEquals(0, event.getMessage().parentMessageId());
 		assertEquals(1, event.getMessage().roomId());
 		assertEquals("Sandbox", event.getMessage().roomName());
@@ -449,7 +449,7 @@ class RoomTest {
 		assertNull(event.getMessage().content());
 		assertEquals(0, event.getMessage().edits());
 		assertEquals(0, event.getMessage().mentionedUserId());
-		assertEquals(20157245, event.getMessage().messageId());
+		assertEquals(20157245, event.getMessage().id());
 		assertEquals(0, event.getMessage().parentMessageId());
 		assertEquals(1, event.getMessage().roomId());
 		assertEquals("Sandbox", event.getMessage().roomName());
@@ -510,7 +510,7 @@ class RoomTest {
 		assertEquals("one", message.content().getContent());
 		assertEquals(0, message.edits());
 		assertEquals(0, message.mentionedUserId());
-		assertEquals(20157245, message.messageId());
+		assertEquals(20157245, message.id());
 		assertEquals(0, message.parentMessageId());
 		assertEquals(1, message.roomId());
 		assertEquals("Sandbox", message.roomName());
@@ -523,7 +523,7 @@ class RoomTest {
 		assertEquals("two", message.content().getContent());
 		assertEquals(0, message.edits());
 		assertEquals(0, message.mentionedUserId());
-		assertEquals(20157246, message.messageId());
+		assertEquals(20157246, message.id());
 		assertEquals(0, message.parentMessageId());
 		assertEquals(1, message.roomId());
 		assertEquals("Sandbox", message.roomName());
@@ -536,7 +536,7 @@ class RoomTest {
 		assertEquals("three", message.content().getContent());
 		assertEquals(0, message.edits());
 		assertEquals(0, message.mentionedUserId());
-		assertEquals(20157247, message.messageId());
+		assertEquals(20157247, message.id());
 		assertEquals(0, message.parentMessageId());
 		assertEquals(1, message.roomId());
 		assertEquals("Sandbox", message.roomName());
@@ -598,7 +598,7 @@ class RoomTest {
 		assertEquals("one", message.content().getContent());
 		assertEquals(0, message.edits());
 		assertEquals(0, message.mentionedUserId());
-		assertEquals(20157245, message.messageId());
+		assertEquals(20157245, message.id());
 		assertEquals(0, message.parentMessageId());
 		assertEquals(1, message.roomId());
 		assertEquals("Sandbox", message.roomName());
@@ -611,7 +611,7 @@ class RoomTest {
 		assertEquals("two", message.content().getContent());
 		assertEquals(0, message.edits());
 		assertEquals(0, message.mentionedUserId());
-		assertEquals(20157246, message.messageId());
+		assertEquals(20157246, message.id());
 		assertEquals(0, message.parentMessageId());
 		assertEquals(1, message.roomId());
 		assertEquals("Sandbox", message.roomName());
@@ -624,7 +624,7 @@ class RoomTest {
 		assertEquals("three", message.content().getContent());
 		assertEquals(0, message.edits());
 		assertEquals(0, message.mentionedUserId());
-		assertEquals(20157247, message.messageId());
+		assertEquals(20157247, message.id());
 		assertEquals(0, message.parentMessageId());
 		assertEquals(1, message.roomId());
 		assertEquals("Sandbox", message.roomName());
@@ -757,7 +757,7 @@ class RoomTest {
 		assertEquals("one", event.getMessage().content().getContent());
 		assertEquals(0, event.getMessage().edits());
 		assertEquals(0, event.getMessage().mentionedUserId());
-		assertEquals(20157245, event.getMessage().messageId());
+		assertEquals(20157245, event.getMessage().id());
 		assertEquals(0, event.getMessage().parentMessageId());
 		assertEquals(1, event.getMessage().roomId());
 		assertEquals("Sandbox", event.getMessage().roomName());
@@ -821,7 +821,7 @@ class RoomTest {
 			assertEquals("<i>meow</i>", event.getMessage().content().getContent());
 			assertEquals(0, event.getMessage().edits());
 			assertEquals(0, event.getMessage().mentionedUserId());
-			assertEquals(20157245, event.getMessage().messageId());
+			assertEquals(20157245, event.getMessage().id());
 			assertEquals(0, event.getMessage().parentMessageId());
 			assertEquals(1, event.getMessage().roomId());
 			assertEquals("Sandbox", event.getMessage().roomName());
@@ -880,7 +880,7 @@ class RoomTest {
 		assertEquals("one", message.content().getContent());
 		assertEquals(0, message.edits());
 		assertEquals(0, message.mentionedUserId());
-		assertEquals(20157245, message.messageId());
+		assertEquals(20157245, message.id());
 		assertEquals(0, message.parentMessageId());
 		assertEquals(1, message.roomId());
 		assertNull(message.roomName());
@@ -893,7 +893,7 @@ class RoomTest {
 		assertEquals("two", message.content().getContent());
 		assertEquals(0, message.edits());
 		assertEquals(0, message.mentionedUserId());
-		assertEquals(20157246, message.messageId());
+		assertEquals(20157246, message.id());
 		assertEquals(0, message.parentMessageId());
 		assertEquals(1, message.roomId());
 		assertNull(message.roomName());
@@ -906,7 +906,7 @@ class RoomTest {
 		assertEquals("three", message.content().getContent());
 		assertEquals(0, message.edits());
 		assertEquals(0, message.mentionedUserId());
-		assertEquals(20157247, message.messageId());
+		assertEquals(20157247, message.id());
 		assertEquals(0, message.parentMessageId());
 		assertEquals(1, message.roomId());
 		assertNull(message.roomName());

@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
  * Represents a chat message. Use its {@link Builder} class to construct new
  * instances.
  * @param timestamp the time the message was posted or last edited
- * @param messageId the message ID. This ID is unique across all chat rooms
+ * @param id the message ID. This ID is unique across all chat rooms
  * @param parentMessageId the parent message ID or 0 if this message is not a
  * reply
  * @param userId the user ID of the message author
@@ -20,13 +20,13 @@ import java.time.LocalDateTime;
  * @param stars the number of stars the message has
  * @author Michael Angstadt
  */
-public record ChatMessage(LocalDateTime timestamp, long messageId, long parentMessageId, int userId, String username, int mentionedUserId, int roomId, String roomName, Content content, int edits, int stars) {
+public record ChatMessage(LocalDateTime timestamp, long id, long parentMessageId, int userId, String username, int mentionedUserId, int roomId, String roomName, Content content, int edits, int stars) {
 
 	/**
 	 * Determines if the message was deleted.
 	 * @return true if the message was deleted, false if not
 	 */
-	public boolean isMessageDeleted() {
+	public boolean isDeleted() {
 		return content == null;
 	}
 
@@ -55,7 +55,7 @@ public record ChatMessage(LocalDateTime timestamp, long messageId, long parentMe
 	public static class Builder {
 		private LocalDateTime timestamp;
 
-		private long messageId;
+		private long id;
 		private long parentMessageId;
 
 		private int userId;
@@ -84,7 +84,7 @@ public record ChatMessage(LocalDateTime timestamp, long messageId, long parentMe
 		public Builder(ChatMessage original) {
 			timestamp = original.timestamp;
 
-			messageId = original.messageId;
+			id = original.id;
 			parentMessageId = original.parentMessageId;
 
 			userId = original.userId;
@@ -112,11 +112,11 @@ public record ChatMessage(LocalDateTime timestamp, long messageId, long parentMe
 
 		/**
 		 * Sets the ID of the message. This ID is unique across all chat rooms.
-		 * @param messageId the message ID
+		 * @param id the message ID
 		 * @return this
 		 */
-		public Builder messageId(long messageId) {
-			this.messageId = messageId;
+		public Builder id(long id) {
+			this.id = id;
 			return this;
 		}
 
@@ -240,7 +240,7 @@ public record ChatMessage(LocalDateTime timestamp, long messageId, long parentMe
 		 * @return the built object
 		 */
 		public ChatMessage build() {
-			return new ChatMessage(timestamp, messageId, parentMessageId, userId, username, mentionedUserId, roomId, roomName, content, edits, stars);
+			return new ChatMessage(timestamp, id, parentMessageId, userId, username, mentionedUserId, roomId, roomName, content, edits, stars);
 		}
 	}
 }

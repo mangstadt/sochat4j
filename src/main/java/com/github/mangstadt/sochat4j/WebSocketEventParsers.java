@@ -368,7 +368,7 @@ class WebSocketEventParsers {
 			 * event to fire on our end.
 			 */
 
-			var event = findMessageWithId(newMessageEvents, message.messageId());
+			var event = findMessageWithId(newMessageEvents, message.id());
 			if (event != null) {
 				newMessageEvents.remove(event);
 
@@ -384,7 +384,7 @@ class WebSocketEventParsers {
 				continue;
 			}
 
-			event = findMessageWithId(editedMessageEvents, message.messageId());
+			event = findMessageWithId(editedMessageEvents, message.id());
 			if (event != null) {
 				editedMessageEvents.remove(event);
 
@@ -442,7 +442,7 @@ class WebSocketEventParsers {
 			 * event to fire on our end.
 			 */
 
-			var event = findMessageWithId(newMessageEvents, message.messageId());
+			var event = findMessageWithId(newMessageEvents, message.id());
 			if (event != null) {
 				newMessageEvents.remove(event);
 
@@ -456,7 +456,7 @@ class WebSocketEventParsers {
 				//@formatter:on
 			}
 
-			event = findMessageWithId(editedMessageEvents, message.messageId());
+			event = findMessageWithId(editedMessageEvents, message.id());
 			if (event != null) {
 				editedMessageEvents.remove(event);
 
@@ -507,7 +507,7 @@ class WebSocketEventParsers {
 
 		var value = element.get("message_id");
 		if (value != null) {
-			builder.messageId(value.asLong());
+			builder.id(value.asLong());
 		}
 
 		value = element.get("time_stamp");

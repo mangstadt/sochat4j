@@ -353,7 +353,7 @@ class ChatClientTest {
 
 	@Test
 	@SuppressWarnings("resource")
-	void getOriginalMessageContent_bad_response() throws Exception {
+	void getOriginalMessageContent_bad_response() {
 		//@formatter:off
 		var httpClient = new MockHttpClientBuilder()	
 			//login not required

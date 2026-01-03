@@ -98,7 +98,7 @@ class HttpTest {
 	 * Vararg parameter must have an even number of arguments.
 	 */
 	@Test
-	void post_parameters_odd() throws Exception {
+	void post_parameters_odd() {
 		var http = new Http(mock(CloseableHttpClient.class));
 		assertThrows(IllegalArgumentException.class, () -> http.post("uri", "one"));
 	}
@@ -124,7 +124,7 @@ class HttpTest {
 	 * Parameter names cannot be null.
 	 */
 	@Test
-	void post_parameters_null_name() throws Exception {
+	void post_parameters_null_name() {
 		var http = new Http(mock(CloseableHttpClient.class));
 		assertThrows(NullPointerException.class, () -> http.post("uri", (String) null, "value"));
 	}

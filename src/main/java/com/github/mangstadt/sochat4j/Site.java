@@ -13,7 +13,8 @@ public enum Site {
 	STACKOVERFLOW("stackoverflow.com");
 	//@formatter:on
 
-	private final String domain, loginDomain;
+	private final String domain;
+	private final String loginDomain;
 
 	/**
 	 * @param domain the site's domain name (e.g. "stackoverflow.com")

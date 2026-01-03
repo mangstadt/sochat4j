@@ -38,6 +38,12 @@ import com.github.mangstadt.sochat4j.util.WebSocketClientImpl;
  * explanation of how SO Chat works</a>
  */
 public class ChatClient implements IChatClient {
+	/**
+	 * The maximum number of characters a markdown-formatted chat message can
+	 * be.
+	 */
+	public static final int MAX_MARKDOWN_MESSAGE_LENGTH = 500;
+
 	private static final Logger logger = LoggerFactory.getLogger(ChatClient.class);
 
 	private final Http http;

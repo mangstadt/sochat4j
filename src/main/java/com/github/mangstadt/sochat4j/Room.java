@@ -59,7 +59,6 @@ import okhttp3.WebSocketListener;
  */
 public class Room implements IRoom {
 	private static final Logger logger = LoggerFactory.getLogger(Room.class);
-	private static final int MAX_MESSAGE_LENGTH = 500;
 
 	private static final int CLOSE_NORMAL = 1000;
 	private static final int CLOSE_GOING_AWAY = 1001;
@@ -409,7 +408,7 @@ public class Room implements IRoom {
 			//messages with newlines have no length limit
 			parts = List.of(message);
 		} else {
-			parts = splitStrategy.split(message, MAX_MESSAGE_LENGTH);
+			parts = splitStrategy.split(message, ChatClient.MAX_MARKDOWN_MESSAGE_LENGTH);
 		}
 
 		//@formatter:off

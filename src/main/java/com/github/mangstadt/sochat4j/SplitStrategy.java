@@ -141,13 +141,9 @@ public enum SplitStrategy {
 
 				var skipAheadOne = false;
 				switch (cur) {
-				case '\\':
-					skipAheadOne = (inCode && next == '`') || (!inCode && isSpecialChar(next));
-					break;
-				case '`':
-					inCode = !inCode;
-					break;
-				case '*':
+				case '\\' -> skipAheadOne = (inCode && next == '`') || (!inCode && isSpecialChar(next));
+				case '`' -> inCode = !inCode;
+				case '*' -> {
 					if (!inCode) {
 						if (next == '*') {
 							inBold = !inBold;
@@ -156,16 +152,16 @@ public enum SplitStrategy {
 							inItalic = !inItalic;
 						}
 					}
-					break;
-				case '[':
+				}
+				case '[' -> {
 					if (!inCode) {
 						if (i < message.length() - 4 && message.substring(i + 1, i + 5).equals("tag:")) {
 							inTag = true;
 						}
 						inLink = true;
 					}
-					break;
-				case ']':
+				}
+				case ']' -> {
 					if (inLink) {
 						if (next != '(') {
 							//it's not a link, just some brackets!
@@ -175,11 +171,11 @@ public enum SplitStrategy {
 					if (inTag) {
 						inTag = false;
 					}
-					break;
-				case ')':
-					//assumes there are no parens in the URL or title string
-					inLink = false;
-					break;
+				}
+				case ')' -> inLink = false; //assumes there are no parens in the URL or title string
+				default -> {
+					//not a markdown character
+				}
 				}
 
 				if (skipAheadOne) {

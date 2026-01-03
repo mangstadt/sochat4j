@@ -54,7 +54,7 @@ class HttpTest {
 		var response = http.get("uri");
 		assertEquals(200, response.getStatusCode());
 		assertEquals("The body", response.getBody());
-		assertThrows(JsonProcessingException.class, () -> response.getBodyAsJson());
+		assertThrows(JsonProcessingException.class, response::getBodyAsJson);
 		assertNotNull(response.getBodyAsHtml());
 	}
 
@@ -84,7 +84,7 @@ class HttpTest {
 		var response = http.get("http://www.example.com/test/index.html");
 		assertEquals(200, response.getStatusCode());
 		assertEquals("<html><a href=\"foo.html\">link</a></html>", response.getBody());
-		assertThrows(JsonProcessingException.class, () -> response.getBodyAsJson());
+		assertThrows(JsonProcessingException.class, response::getBodyAsJson);
 
 		/*
 		 * Make sure it resolves relative URLs.

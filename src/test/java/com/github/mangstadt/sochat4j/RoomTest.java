@@ -1409,8 +1409,8 @@ class RoomTest {
 		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsClient);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
-		assertThrows(IOException.class, () -> room.getPingableUsers());
-		assertThrows(IOException.class, () -> room.getPingableUsers());
+		assertThrows(IOException.class, room::getPingableUsers);
+		assertThrows(IOException.class, room::getPingableUsers);
 		assertEquals(0, room.getPingableUsers().size());
 		assertEquals(0, room.getPingableUsers().size());
 		assertEquals(1, room.getPingableUsers().size());
@@ -1599,8 +1599,8 @@ class RoomTest {
 		var chatClient = new ChatClient(Site.STACKOVERFLOW, httpClient, wsClient);
 		chatClient.login("email", "password");
 		var room = chatClient.joinRoom(1);
-		assertThrows(IOException.class, () -> room.getRoomInfo());
-		assertThrows(IOException.class, () -> room.getRoomInfo());
+		assertThrows(IOException.class, room::getRoomInfo);
+		assertThrows(IOException.class, room::getRoomInfo);
 
 		var info = room.getRoomInfo();
 		assertNull(info.description());

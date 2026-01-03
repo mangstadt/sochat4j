@@ -18,17 +18,6 @@ import java.time.LocalDateTime;
  * @author Michael Angstadt
  */
 public record UserInfo(int userId, int roomId, String username, String profilePicture, int reputation, boolean moderator, boolean owner, LocalDateTime lastSeen, LocalDateTime lastPost) {
-
-	/**
-	 * Gets the URL of the user's profile picture. For users without a profile
-	 * picture, this will return a URL to a picture that was auto-generated
-	 * based on a hash of the user's email address.
-	 * @return the profile picture URL
-	 */
-	public String profilePicture() {
-		return profilePicture;
-	}
-
 	public static class Builder {
 		private int userId;
 		private int roomId;

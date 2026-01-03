@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -174,7 +175,7 @@ public class Room implements IRoom {
 		var wsUri = getWebSocketUri();
 		var origin = baseUrl().toString();
 
-		logger.atInfo().log(() -> "[room=" + roomId + "]: Connecting to websocket: " + wsUri);
+		logger.atInfo().log(logMessage(() -> "Connecting to websocket: " + wsUri));
 
 		webSocket = webSocketClient.connect(wsUri, origin, webSocketListener);
 	}
@@ -191,7 +192,7 @@ public class Room implements IRoom {
 			@Override
 			public void run() {
 				synchronized (Room.this) {
-					logger.atInfo().log(() -> "[room=" + roomId + "]: Recreating websocket connection.");
+					logger.atInfo().log(logMessage(() -> "Recreating websocket connection."));
 
 					webSocketListener.gracefulClosure = true;
 					webSocket.close(CLOSE_NORMAL, "");
@@ -209,7 +210,7 @@ public class Room implements IRoom {
 					try {
 						connectToWebSocket();
 					} catch (IOException e) {
-						logger.atError().setCause(e).log(() -> "[room=" + roomId + "]: Problem getting websocket URI from chat room. Leaving room.");
+						logger.atError().setCause(e).log(logMessage(() -> "Problem getting websocket URI from chat room. Leaving room."));
 						leave();
 					}
 				}
@@ -279,11 +280,11 @@ public class Room implements IRoom {
 		try {
 			node = JsonUtils.parse(json);
 		} catch (JsonProcessingException e) {
-			logger.atError().setCause(e).log(() -> "[room " + roomId + "]: Problem parsing JSON from websocket:\n" + json);
+			logger.atError().setCause(e).log(logMessage(() -> "Problem parsing JSON from websocket:\n") + json);
 			return;
 		}
 
-		logger.atDebug().log(() -> "[room " + roomId + "]: Received message:\n" + JsonUtils.prettyPrint(node) + "\n");
+		logger.atDebug().log(logMessage(() -> "Received message:\n") + JsonUtils.prettyPrint(node) + "\n");
 
 		var roomNode = node.get("r" + roomId);
 		if (roomNode == null) {
@@ -348,13 +349,13 @@ public class Room implements IRoom {
 		for (var eventNode : eventsNode) {
 			var eventTypeNode = eventNode.get("event_type");
 			if (eventTypeNode == null || !eventTypeNode.canConvertToInt()) {
-				logger.atWarn().log(() -> "[room " + roomId + "]: Ignoring JSON object that does not have a valid \"event_type\" field:\n" + JsonUtils.prettyPrint(eventNode) + "\n");
+				logger.atWarn().log(logMessage(() -> "Ignoring JSON object that does not have a valid \"event_type\" field:\n" + JsonUtils.prettyPrint(eventNode) + "\n"));
 				continue;
 			}
 
 			var eventType = WebSocketEventType.get(eventTypeNode.asInt());
 			if (eventType == null) {
-				logger.atWarn().log(() -> "[room " + roomId + "]: Ignoring event with unknown \"event_type\":\n" + JsonUtils.prettyPrint(eventNode) + "\n");
+				logger.atWarn().log(logMessage(() -> "Ignoring event with unknown \"event_type\":\n" + JsonUtils.prettyPrint(eventNode) + "\n"));
 				continue;
 			}
 
@@ -377,7 +378,7 @@ public class Room implements IRoom {
 		case MESSAGE_STARRED -> WebSocketEventParsers.messageStarred(node);
 		case MESSAGE_DELETED -> WebSocketEventParsers.messageDeleted(node);
 		default -> {
-			logger.atWarn().log(() -> "[room " + roomId + "]: Ignoring event with unknown \"event_type\":\n" + JsonUtils.prettyPrint(node) + "\n");
+			logger.atWarn().log(logMessage(() -> "Ignoring event with unknown \"event_type\":\n" + JsonUtils.prettyPrint(node) + "\n"));
 			yield null;
 		}
 		};
@@ -515,7 +516,7 @@ public class Room implements IRoom {
 		case "\"You can only delete your own messages\"":
 			throw new IOException("Message " + messageId + " cannot be deleted because it was posted by somebody else.");
 		default:
-			logger.atWarn().log(() -> "Unexpected response when attempting to delete message [room=" + roomId + ", id=" + messageId + "]: " + body);
+			logger.atWarn().log(logMessage(() -> "") + body);
 			break;
 		}
 	}
@@ -551,7 +552,7 @@ public class Room implements IRoom {
 		case "\"You can only edit your own messages\"":
 			throw new IOException("Message " + messageId + " cannot be edited because it was posted by somebody else.");
 		default:
-			logger.atWarn().log(() -> "Unexpected response when attempting to edit message [room=" + roomId + ", id=" + messageId + "]: " + body);
+			logger.atWarn().log(logMessage(() -> "") + body);
 			break;
 		}
 	}
@@ -649,13 +650,13 @@ public class Room implements IRoom {
 			);
 			//@formatter:on
 		} catch (Exception e) {
-			logger.atError().setCause(e).log(() -> "[room=" + roomId + "]: Problem leaving room.");
+			logger.atError().setCause(e).log(logMessage(() -> "Problem leaving room."));
 		}
 
 		try {
 			close();
 		} catch (IOException e) {
-			logger.atError().setCause(e).log(() -> "[room=" + roomId + "]: Problem closing websocket session.");
+			logger.atError().setCause(e).log(logMessage(() -> "Problem closing websocket session."));
 		}
 	}
 
@@ -744,7 +745,7 @@ public class Room implements IRoom {
 			}
 
 			if (firstConnection) {
-				logger.atError().setCause(t).log(() -> "[room=" + roomId + "]: Error connecting to websocket. Leaving room.");
+				logger.atError().setCause(t).log(logMessage(() -> "Error connecting to websocket. Leaving room."));
 				leave();
 			} else if (isRecoverableFailure(t)) {
 				/*
@@ -757,10 +758,10 @@ public class Room implements IRoom {
 				 * See: https://chat.stackoverflow.com/transcript/message/
 				 * 57407855#57407855
 				 */
-				logger.atError().setCause(t).log(() -> "[room=" + roomId + "]: Websocket abruptly disconnected.");
+				logger.atError().setCause(t).log(logMessage(() -> "Websocket abruptly disconnected."));
 				attemptToReconnect(webSocket);
 			} else {
-				logger.atError().setCause(t).log(() -> "[room=" + roomId + "]: Unrecoverable problem with websocket. Leaving room.");
+				logger.atError().setCause(t).log(logMessage(() -> "Unrecoverable problem with websocket. Leaving room."));
 				leave();
 			}
 		}
@@ -781,7 +782,7 @@ public class Room implements IRoom {
 				return;
 			}
 
-			logger.atError().log(() -> "[room=" + roomId + "]: Websocket closed by server. Reason=\"" + reason + "\" Code=" + code);
+			logger.atError().log(logMessage(() -> "Websocket closed by server. Reason=\"" + reason + "\" Code=" + code));
 			attemptToReconnect(webSocket);
 		}
 
@@ -791,12 +792,12 @@ public class Room implements IRoom {
 		 */
 		@Override
 		public void onClosing(WebSocket webSocket, int code, String reason) {
-			logger.atError().log(() -> "[room=" + roomId + "]: Websocket is being closed by the server. Reason=\"" + reason + "\" Code=" + code);
+			logger.atError().log(logMessage(() -> "Websocket is being closed by the server. Reason=\"" + reason + "\" Code=" + code));
 		}
 
 		private void attemptToReconnect(WebSocket webSocket) {
 			if (reconnectionAttempts >= maxReconnectionAttempts) {
-				logger.atError().log(() -> "[room=" + roomId + "]: Unable to reconnect to websocket after " + reconnectionAttempts + " attempts. Leaving room.");
+				logger.atError().log(logMessage(() -> "Unable to reconnect to websocket after " + reconnectionAttempts + " attempts. Leaving room."));
 				leave();
 				return;
 			}
@@ -810,17 +811,21 @@ public class Room implements IRoom {
 				webSocket.cancel();
 
 				var sleepSeconds = (reconnectionAttempts + 1) * 10;
-				logger.atError().log(() -> "[room=" + roomId + "]: Attempting to reconnect websocket in " + sleepSeconds + " seconds.");
+				logger.atError().log(logMessage(() -> "Attempting to reconnect websocket in " + sleepSeconds + " seconds."));
 				Sleeper.sleep(Duration.ofSeconds(sleepSeconds));
 
 				reconnectionAttempts++;
 				try {
 					connectToWebSocket();
 				} catch (IOException e) {
-					logger.atError().setCause(e).log(() -> "[room=" + roomId + "]: Problem getting websocket URI from chat room. Leaving room.");
+					logger.atError().setCause(e).log(logMessage(() -> "Problem getting websocket URI from chat room. Leaving room."));
 					leave();
 				}
 			}
 		}
+	}
+
+	private Supplier<String> logMessage(Supplier<String> message) {
+		return () -> "[room=" + roomId + "]: " + message.get();
 	}
 }

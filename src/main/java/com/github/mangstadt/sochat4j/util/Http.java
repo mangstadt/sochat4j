@@ -110,8 +110,8 @@ public class Http implements Closeable {
 			//@formatter:off
 			var params = IntStream.iterate(0, i -> i < parameters.length, i -> i + 2)
 				.mapToObj(i -> {
-					String name = parameters[i].toString();
-					String value = Objects.toString(parameters[i + 1]);
+					var name = parameters[i].toString();
+					var value = Objects.toString(parameters[i + 1]);
 					return new BasicNameValuePair(name, value);
 				})
 			.toList();

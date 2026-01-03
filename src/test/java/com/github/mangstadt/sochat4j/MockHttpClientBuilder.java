@@ -260,12 +260,12 @@ public class MockHttpClientBuilder {
 
 			this.method = method;
 			this.uri = uri;
-			
+
 			//@formatter:off
 			this.params = IntStream.iterate(0, i -> i < params.length, i -> i + 2)
 				.mapToObj(i -> {
-					String name = params[i];
-					String value = params[i + 1];
+					var name = params[i];
+					var value = params[i + 1];
 					return new BasicNameValuePair(name, value);
 				})
 			.collect(Collectors.toSet());

@@ -608,13 +608,13 @@ public class Room implements IRoom {
 		var root = response.getBodyAsJson();
 
 		var node = root.get("id");
-		int id = (node == null) ? 0 : node.asInt();
+		var id = (node == null) ? 0 : node.asInt();
 
 		node = root.get("name");
-		String name = (node == null) ? null : node.asText();
+		var name = (node == null) ? null : node.asText();
 
 		node = root.get("description");
-		String description = (node == null) ? null : node.asText();
+		var description = (node == null) ? null : node.asText();
 
 		node = root.get("tags");
 		List<String> tags;

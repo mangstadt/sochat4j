@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 import com.github.mangstadt.sochat4j.ChatClient;
-import com.github.mangstadt.sochat4j.ChatMessage;
 import com.github.mangstadt.sochat4j.InvalidCredentialsException;
 import com.github.mangstadt.sochat4j.PrivateRoomException;
 import com.github.mangstadt.sochat4j.RoomNotFoundException;
@@ -34,17 +33,17 @@ public class LurkBot {
 
 			room.addEventListener(e -> {
 				if (e instanceof MessageDeletedEvent event) {
-					ChatMessage message = event.getMessage();
+					var message = event.getMessage();
 					System.out.println("Message by " + message.username() + " was deleted.");
 				}
 
 				if (e instanceof MessageEditedEvent event) {
-					ChatMessage message = event.getMessage();
+					var message = event.getMessage();
 					System.out.println("Message by " + message.username() + " was edited: " + message.content().getContent());
 				}
 
 				if (e instanceof MessagePostedEvent event) {
-					ChatMessage message = event.getMessage();
+					var message = event.getMessage();
 					System.out.println(message.username() + " said: " + message.content().getContent());
 				}
 
@@ -53,7 +52,7 @@ public class LurkBot {
 				}
 
 				if (e instanceof MessageStarredEvent event) {
-					ChatMessage message = event.getMessage();
+					var message = event.getMessage();
 					System.out.println("Message now has " + message.stars() + " stars: " + message.content().getContent());
 				}
 

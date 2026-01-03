@@ -128,14 +128,18 @@ public enum SplitStrategy {
 		 * location
 		 */
 		private boolean[] markdownLocations(String message) {
-			boolean inBold = false, inItalic = false, inCode = false, inTag = false, inLink = false;
+			var inBold = false;
+			var inItalic = false;
+			var inCode = false;
+			var inTag = false;
+			var inLink = false;
 			var inMarkdown = new boolean[message.length()];
 
 			for (var i = 0; i < message.length(); i++) {
 				var cur = message.charAt(i);
 				var next = (i == message.length() - 1) ? 0 : message.charAt(i + 1);
 
-				boolean skipAheadOne = false;
+				var skipAheadOne = false;
 				switch (cur) {
 				case '\\':
 					skipAheadOne = (inCode && next == '`') || (!inCode && isSpecialChar(next));
@@ -278,7 +282,7 @@ public enum SplitStrategy {
 		}
 		return _split(message, maxLength);
 	}
-	
+
 	private static Stream<String> stream(Iterator<String> it) {
 		return StreamSupport.stream(Spliterators.spliteratorUnknownSize(it, Spliterator.ORDERED), false);
 	}

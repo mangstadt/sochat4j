@@ -8,7 +8,6 @@ import com.fasterxml.jackson.core.PrettyPrinter;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -75,7 +74,7 @@ public final class JsonUtils {
 	}
 
 	private static String toString(JsonNode node, PrettyPrinter pp) {
-		ObjectWriter writer = mapper.writer(pp);
+		var writer = mapper.writer(pp);
 		try {
 			return writer.writeValueAsString(node);
 		} catch (JsonProcessingException e) {
@@ -83,7 +82,7 @@ public final class JsonUtils {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	/**
 	 * Streams the elements of an array.
 	 * @param array the array

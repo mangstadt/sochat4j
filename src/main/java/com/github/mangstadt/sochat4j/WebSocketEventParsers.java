@@ -284,10 +284,12 @@ class WebSocketEventParsers {
 		}
 
 		var builder = new MessagesMovedEvent.Builder();
-		
+
+		//@formatter:off
 		builder.messages(moveEvents.stream()
 			.map(WebSocketEventParsers::extractChatMessage)
 		.toList());
+		//@formatter:on
 
 		/*
 		 * When messages are moved, the chat system posts a new message
@@ -357,7 +359,7 @@ class WebSocketEventParsers {
 			var message = extractChatMessage(replyEvent);
 
 			var value = replyEvent.get("id");
-			long eventId = (value == null) ? 0 : value.asLong();
+			var eventId = (value == null) ? 0L : value.asLong();
 
 			/*
 			 * Whenever a "reply" event is posted, an accompanying
@@ -478,7 +480,7 @@ class WebSocketEventParsers {
 		//@formatter:off
 		return events.stream()
 			.filter(event -> {
-				JsonNode value = event.get("message_id");
+				var value = event.get("message_id");
 				return (value != null) && (value.asLong() == id);
 			})
 		.findFirst().orElse(null);
@@ -512,7 +514,7 @@ class WebSocketEventParsers {
 
 		value = element.get("time_stamp");
 		if (value != null) {
-			LocalDateTime ts = timestamp(value.asLong());
+			var ts = timestamp(value.asLong());
 			builder.timestamp(ts);
 		}
 

@@ -363,7 +363,7 @@ public final class ResponseSamples {
 		private boolean firstEvent = true, firstRoom = true;
 
 		public WebSocketMessageBuilder() throws IOException {
-			JsonFactory factory = new JsonFactory();
+			var factory = new JsonFactory();
 			generator = factory.createGenerator(writer);
 			generator.setPrettyPrinter(new DefaultPrettyPrinter());
 

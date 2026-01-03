@@ -162,7 +162,7 @@ public class Content {
 		var inMention = false;
 		var buffer = new StringBuilder();
 		for (var i = 0; i < sanitizedContent.length(); i++) {
-			char c = sanitizedContent.charAt(i);
+			var c = sanitizedContent.charAt(i);
 
 			if (inMention) {
 				if (Character.isLetter(c) || Character.isDigit(c)) {

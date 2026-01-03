@@ -1448,7 +1448,7 @@ class RoomTest {
 
 		var it = users.iterator();
 
-		UserInfo user = it.next();
+		var user = it.next();
 		assertEquals(13379, user.userId());
 		assertEquals("Michael", user.username());
 		assertEquals("https://i.stack.imgur.com/awces.jpg?s=128&g=1", user.profilePicture());
@@ -1519,7 +1519,8 @@ class RoomTest {
 
 		var users = room.getUserInfo(List.of(13379));
 		assertEquals(1, users.size());
-		UserInfo user = users.get(0);
+
+		var user = users.get(0);
 		assertEquals(0, user.userId());
 		assertNull(user.username());
 		assertNull(user.profilePicture());

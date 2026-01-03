@@ -406,7 +406,7 @@ class ChatClientTest {
 		try (var client = new ChatClient(Site.STACKOVERFLOW, httpClient, wsClient)) {
 			client.login("email", "password");
 
-			Room room = client.joinRoom(1);
+			var room = client.joinRoom(1);
 			assertEquals(1, room.getRoomId());
 			assertEquals("0123456789abcdef0123456789abcdef", room.getFkey());
 

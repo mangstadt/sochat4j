@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -122,7 +123,7 @@ public class Leaf {
 	 * @return the child elements
 	 */
 	public List<Leaf> children() {
-		return leavesFrom(node.getChildNodes());
+		return leavesFrom(node.getChildNodes()).toList();
 	}
 
 	/**
@@ -160,6 +161,15 @@ public class Leaf {
 	 * @return the elements
 	 */
 	public List<Leaf> select(String expression) {
+		return stream(expression).toList();
+	}
+
+	/**
+	 * Selects the elements that match the given xpath expression.
+	 * @param expression the xpath expression
+	 * @return the stream of elements
+	 */
+	public Stream<Leaf> stream(String expression) {
 		NodeList nodeList;
 		try {
 			nodeList = (NodeList) xpath.evaluate(expression, node, XPathConstants.NODESET);
@@ -181,14 +191,12 @@ public class Leaf {
 	 * @param nodeList the node list
 	 * @return the leaf objects
 	 */
-	private List<Leaf> leavesFrom(NodeList nodeList) {
+	private Stream<Leaf> leavesFrom(NodeList nodeList) {
 		//@formatter:off
-		return IntStream.range(0, nodeList.getLength())
-			.mapToObj(nodeList::item)
+		return nodeStream(nodeList)
 			.filter(Element.class::isInstance)
 			.map(Element.class::cast)
-			.map(element -> new Leaf(element, xpath))
-		.toList();
+			.map(element -> new Leaf(element, xpath));
 		//@formatter:on
 	}
 
@@ -208,13 +216,21 @@ public class Leaf {
 	 */
 	public Map<String, String> attributes() {
 		var attributes = element.getAttributes();
-		
+
 		//@formatter:off
 		return IntStream.range(0, attributes.getLength())
 			.mapToObj(attributes::item)
 			.map(Attr.class::cast)
 		.collect(Collectors.toMap(Attr::getName, Attr::getValue));
 		//@formatter:on
+	}
+
+	public static Stream<Node> nodeStream(NodeList nodeList) {
+		return IntStream.range(0, nodeList.getLength()).mapToObj(nodeList::item);
+	}
+
+	public static Iterable<Node> iterable(NodeList nodeList) {
+		return () -> nodeStream(nodeList).iterator();
 	}
 
 	/**

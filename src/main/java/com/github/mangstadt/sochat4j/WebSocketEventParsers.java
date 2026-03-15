@@ -566,12 +566,30 @@ class WebSocketEventParsers {
 		 */
 		value = element.get("parent_id");
 		if (value != null) {
-			builder.parentMessageId(value.asLong());
+			builder.parentId(value.asLong());
 		}
 
 		/*
-		 * This field is only present if the message contains a valid
-		 * mention or if the message is a reply to another message.
+		 * This field is only present when the message is a reply to another
+		 * message.
+		 */
+		value = element.get("parent_username");
+		if (value != null) {
+			builder.parentUsername(value.asText());
+		}
+
+		/*
+		 * This field is only present when the message is a reply to another
+		 * message.
+		 */
+		value = element.get("parent_text");
+		if (value != null && !value.isNull()) {
+			builder.parentContent(Content.parse(value.asText()));
+		}
+
+		/*
+		 * Not sure if this field still exists. Only present when the message is
+		 * a reply to another message.
 		 */
 		value = element.get("target_user_id");
 		if (value != null) {

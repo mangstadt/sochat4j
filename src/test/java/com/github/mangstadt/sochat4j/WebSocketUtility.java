@@ -12,7 +12,6 @@ import org.apache.http.impl.client.HttpClients;
 import org.jsoup.nodes.Document;
 
 import com.github.mangstadt.sochat4j.util.Http;
-import com.github.mangstadt.sochat4j.util.JsonUtils;
 
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -181,7 +180,7 @@ public class WebSocketUtility {
 		}
 
 		//@formatter:off
-		return JsonUtils.streamArray(events)
+		return events.valueStream()
 			.map(WebSocketEventParsers::extractChatMessage)
 		.toList();
 		//@formatter:on

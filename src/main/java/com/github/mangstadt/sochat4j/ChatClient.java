@@ -26,7 +26,6 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.mangstadt.sochat4j.util.Http;
-import com.github.mangstadt.sochat4j.util.JsonUtils;
 import com.github.mangstadt.sochat4j.util.WebSocketClient;
 import com.github.mangstadt.sochat4j.util.WebSocketClientImpl;
 
@@ -377,7 +376,7 @@ public class ChatClient implements IChatClient {
 		}
 
 		//@formatter:off
-		return JsonUtils.streamArray(usersNode)
+		return usersNode.valueStream()
 			.map(n -> parseUserInfo(roomId, n))
 		.toList();
 		//@formatter:on

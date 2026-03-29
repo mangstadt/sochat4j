@@ -483,7 +483,7 @@ public class Room implements IRoom {
 		}
 
 		//@formatter:off
-		return JsonUtils.streamArray(events)
+		return events.valueStream()
 			.map(WebSocketEventParsers::extractChatMessage)
 		.toList();
 		//@formatter:on
@@ -579,7 +579,7 @@ public class Room implements IRoom {
 		var root = response.getBodyAsJson();
 
 		//@formatter:off
-		return JsonUtils.streamArray(root)
+		return root.valueStream()
 			.filter(JsonNode::isArray)
 			.filter(node -> node.size() >= 4)
 			.map(node -> {

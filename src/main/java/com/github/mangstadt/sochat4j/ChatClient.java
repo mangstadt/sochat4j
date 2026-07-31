@@ -338,13 +338,13 @@ public class ChatClient implements IChatClient {
 			html = EntityUtils.toString(response.getEntity());
 		}
 
-		var p = Pattern.compile("var error = '(.*?)';");
+		var p = Pattern.compile("var error = ['\"](.*?)['\"];");
 		var m = p.matcher(html);
 		if (m.find()) {
 			throw new IOException(exceptionPreamble + " resulted in error: " + m.group(1));
 		}
 
-		p = Pattern.compile("var result = '(.*?)';");
+		p = Pattern.compile("var result = ['\"](.*?)['\"];");
 		m = p.matcher(html);
 		if (m.find()) {
 			return m.group(1);

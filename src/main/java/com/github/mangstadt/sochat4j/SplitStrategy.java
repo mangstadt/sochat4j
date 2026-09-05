@@ -10,6 +10,8 @@ import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import com.github.mangstadt.sochat4j.util.CharIterator;
+
 /**
  * Defines how a chat message should be split up if it exceeds the max message
  * size.
@@ -22,7 +24,7 @@ public enum SplitStrategy {
 	WORD {
 		@Override
 		public List<String> _split(String message, int maxLength) {
-			var markdownLocations = markdownLocations(message);
+			var markdownLocations = new MarkdownLocations(message).find();
 
 			var ellipsis = " ...";
 			maxLength -= ellipsis.length();
@@ -119,81 +121,120 @@ public enum SplitStrategy {
 				return post;
 			}
 		}
-
+		
 		/**
-		 * Figures out where it's *not* safe to split the string.
-		 * @param message the message
-		 * @return a boolean array representing each character in the string. If
-		 * an element is false, that means it is not safe to split at that
-		 * location
+		 * Finds the locations of markdown formatting in a string to determine
+		 * where it's not safe to split the string.
 		 */
-		private boolean[] markdownLocations(String message) {
-			var inBold = false;
-			var inItalic = false;
-			var inCode = false;
-			var inTag = false;
-			var inLink = false;
-			var inMarkdown = new boolean[message.length()];
+		class MarkdownLocations {
+			private final CharIterator it;
+			private final boolean[] inMarkdown;
+			private boolean inBold;
+			private boolean inItalic;
+			private boolean inCode;
+			private boolean inTag;
+			private boolean inLink;
+			private boolean skipAheadOne;
 
-			for (var i = 0; i < message.length(); i++) {
-				var cur = message.charAt(i);
-				var next = (i == message.length() - 1) ? 0 : message.charAt(i + 1);
+			public MarkdownLocations(String message) {
+				inMarkdown = new boolean[message.length()];
+				it = new CharIterator(message);
+			}
 
-				var skipAheadOne = false;
-				switch (cur) {
-				case '\\' -> skipAheadOne = (inCode && next == '`') || (!inCode && isSpecialChar(next));
-				case '`' -> inCode = !inCode;
-				case '*' -> {
-					if (!inCode) {
-						if (next == '*') {
-							inBold = !inBold;
-							skipAheadOne = true;
-						} else {
-							inItalic = !inItalic;
-						}
+			/**
+			 * Finds the locations of markdown formatting in a string.
+			 * @return a boolean array representing each character in the string. If
+			 * an element is false, that means it is not safe to split at that
+			 * location
+			 */
+			public boolean[] find() {
+				while (it.hasNext()) {
+					processNext();
+
+					if (skipAheadOne) {
+						inMarkdown[it.index()] = inMarkdown[it.index() + 1] = true;
+						it.next();
+					} else {
+						inMarkdown[it.index()] = (inBold || inItalic || inCode || inLink || inTag);
 					}
 				}
-				case '[' -> {
-					if (!inCode) {
-						if (i < message.length() - 4 && message.substring(i + 1, i + 5).equals("tag:")) {
-							inTag = true;
-						}
-						inLink = true;
-					}
-				}
-				case ']' -> {
-					if (inLink) {
-						if (next != '(') {
-							//it's not a link, just some brackets!
-							inLink = false;
-						}
-					}
-					if (inTag) {
-						inTag = false;
-					}
-				}
-				case ')' -> inLink = false; //assumes there are no parens in the URL or title string
+
+				return inMarkdown;
+			}
+
+			private void processNext() {
+				skipAheadOne = false;
+
+				switch (it.next()) {
+				case '\\' -> processBackslash();
+				case '`' -> processTilde();
+				case '*' -> processAsterisk();
+				case '[' -> processOpenBracket();
+				case ']' -> processCloseBracket();
+				case ')' -> processCloseParen();
 				default -> {
-					//not a markdown character
+					//do nothing
 				}
-				}
-
-				if (skipAheadOne) {
-					inMarkdown[i] = inMarkdown[i + 1] = true;
-					i++;
-				} else {
-					inMarkdown[i] = (inBold || inItalic || inCode || inLink || inTag);
 				}
 			}
-			return inMarkdown;
-		}
 
-		private boolean isSpecialChar(char c) {
-			/*
-			 * I don't escape () or _ in DescriptionNodeVisitor, so I'm not
-			 * going to treat these characters as escapable.
-			 */
-			return "`*[]".indexOf(c) >= 0;
+			private void processBackslash() {
+				var next = it.peek();
+				skipAheadOne = (inCode && next == '`') || (!inCode && isSpecialChar(next));
+			}
+
+			private void processTilde() {
+				inCode = !inCode;
+			}
+
+			private void processAsterisk() {
+				if (inCode) {
+					return;
+				}
+
+				if (it.peek() == '*') {
+					inBold = !inBold;
+					skipAheadOne = true;
+				} else {
+					inItalic = !inItalic;
+				}
+			}
+
+			private void processOpenBracket() {
+				if (inCode) {
+					return;
+				}
+
+				if (it.peek(4).equals("tag:")) {
+					inTag = true;
+				}
+
+				inLink = true;
+			}
+
+			private void processCloseBracket() {
+				if (inLink && it.peek() != '(') {
+					//it's not a link, just some brackets
+					inLink = false;
+				}
+
+				if (inTag) {
+					inTag = false;
+				}
+			}
+
+			private void processCloseParen() {
+				//assumes there are no parens in the URL or title string
+				inLink = false;
+			}
+
+			private boolean isSpecialChar(char c) {
+				/*
+				 * I don't escape () or _ in DescriptionNodeVisitor, so I'm not
+				 * going to treat these characters as escapable.
+				 */
+				return "`*[]".indexOf(c) >= 0;
+			}
 		}
 	},
 

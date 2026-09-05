@@ -6,6 +6,8 @@ import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
+import com.github.mangstadt.sochat4j.util.CharIterator;
+
 /**
  * Represents the message content of a chat message.
  * @author Michael Angstadt
@@ -161,8 +163,9 @@ public class Content {
 
 		var inMention = false;
 		var buffer = new StringBuilder();
-		for (var i = 0; i < sanitizedContent.length(); i++) {
-			var c = sanitizedContent.charAt(i);
+		var it = new CharIterator(sanitizedContent);
+		while (it.hasNext()) {
+			var c = it.next();
 
 			if (inMention) {
 				if (Character.isLetter(c) || Character.isDigit(c)) {

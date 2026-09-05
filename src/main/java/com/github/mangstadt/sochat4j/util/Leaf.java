@@ -52,7 +52,7 @@ public class Leaf {
 	 */
 	public Leaf(Node node) {
 		this.node = node;
-		this.element = (node instanceof Element element) ? element : null;
+		this.element = (node instanceof Element e) ? e : null;
 		this.xpath = XPathFactory.newInstance().newXPath();
 	}
 
@@ -141,9 +141,9 @@ public class Leaf {
 	 * @return the element or null if not found
 	 */
 	public Leaf selectFirst(String expression) {
-		Element element;
+		Element first;
 		try {
-			element = (Element) xpath.evaluate(expression, node, XPathConstants.NODE);
+			first = (Element) xpath.evaluate(expression, node, XPathConstants.NODE);
 		} catch (XPathExpressionException e) {
 			/*
 			 * Since xpath expressions are almost always hard-coded, do not
@@ -152,7 +152,7 @@ public class Leaf {
 			throw new RuntimeException(e);
 		}
 
-		return (element == null) ? null : new Leaf(element, xpath);
+		return (first == null) ? null : new Leaf(first, xpath);
 	}
 
 	/**
@@ -196,7 +196,7 @@ public class Leaf {
 		return nodeStream(nodeList)
 			.filter(Element.class::isInstance)
 			.map(Element.class::cast)
-			.map(element -> new Leaf(element, xpath));
+			.map(e -> new Leaf(e, xpath));
 		//@formatter:on
 	}
 

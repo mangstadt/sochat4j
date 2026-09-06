@@ -33,28 +33,29 @@ public class CharIterator {
 	}
 
 	/**
-	 * Gets the previous character.
-	 * @return the previous character or 0 if the iterator is at the beginning
-	 * of the string
-	 */
-	public char prev() {
-		return (i <= 0) ? 0 : s.charAt(i - 1);
-	}
-
-	/**
 	 * Gets the next character without advancing.
 	 * @return the next character
 	 */
 	public char peek() {
-		return (i == s.length() - 1) ? 0 : s.charAt(i + 1);
+		return hasNext() ? s.charAt(i + 1) : 0;
 	}
 
+	/**
+	 * Gets the next set of characters without advancing.
+	 * @param length the number of characters to get
+	 * @return the next characters
+	 */
 	public String peek(int length) {
-		int end = i + length;
+		if (!hasNext()) {
+			return "";
+		}
+
+		int start = i + 1;
+		int end = start + length;
 		if (end > s.length()) {
 			end = s.length();
 		}
-		return s.substring(i, end);
+		return s.substring(start, end);
 	}
 
 	/**

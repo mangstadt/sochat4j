@@ -10,7 +10,7 @@ import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import com.github.mangstadt.sochat4j.util.CharIterator;
+import com.github.mangstadt.sochat4j.util.MarkdownLocations;
 
 /**
  * Defines how a chat message should be split up if it exceeds the max message
@@ -119,121 +119,6 @@ public enum SplitStrategy {
 				post = message.substring(leftBound, spacePos);
 				leftBound = spacePos + 1;
 				return post;
-			}
-		}
-		
-		/**
-		 * Finds the locations of markdown formatting in a string to determine
-		 * where it's not safe to split the string.
-		 */
-		class MarkdownLocations {
-			private final CharIterator it;
-			private final boolean[] inMarkdown;
-			private boolean inBold;
-			private boolean inItalic;
-			private boolean inCode;
-			private boolean inTag;
-			private boolean inLink;
-			private boolean skipAheadOne;
-
-			public MarkdownLocations(String message) {
-				inMarkdown = new boolean[message.length()];
-				it = new CharIterator(message);
-			}
-
-			/**
-			 * Finds the locations of markdown formatting in a string.
-			 * @return a boolean array representing each character in the string. If
-			 * an element is false, that means it is not safe to split at that
-			 * location
-			 */
-			public boolean[] find() {
-				while (it.hasNext()) {
-					processNext();
-
-					if (skipAheadOne) {
-						inMarkdown[it.index()] = inMarkdown[it.index() + 1] = true;
-						it.next();
-					} else {
-						inMarkdown[it.index()] = (inBold || inItalic || inCode || inLink || inTag);
-					}
-				}
-
-				return inMarkdown;
-			}
-
-			private void processNext() {
-				skipAheadOne = false;
-
-				switch (it.next()) {
-				case '\\' -> processBackslash();
-				case '`' -> processTilde();
-				case '*' -> processAsterisk();
-				case '[' -> processOpenBracket();
-				case ']' -> processCloseBracket();
-				case ')' -> processCloseParen();
-				default -> {
-					//do nothing
-				}
-				}
-			}
-
-			private void processBackslash() {
-				var next = it.peek();
-				skipAheadOne = (inCode && next == '`') || (!inCode && isSpecialChar(next));
-			}
-
-			private void processTilde() {
-				inCode = !inCode;
-			}
-
-			private void processAsterisk() {
-				if (inCode) {
-					return;
-				}
-
-				if (it.peek() == '*') {
-					inBold = !inBold;
-					skipAheadOne = true;
-				} else {
-					inItalic = !inItalic;
-				}
-			}
-
-			private void processOpenBracket() {
-				if (inCode) {
-					return;
-				}
-
-				if (it.peek(4).equals("tag:")) {
-					inTag = true;
-				}
-
-				inLink = true;
-			}
-
-			private void processCloseBracket() {
-				if (inLink && it.peek() != '(') {
-					//it's not a link, just some brackets
-					inLink = false;
-				}
-
-				if (inTag) {
-					inTag = false;
-				}
-			}
-
-			private void processCloseParen() {
-				//assumes there are no parens in the URL or title string
-				inLink = false;
-			}
-
-			private boolean isSpecialChar(char c) {
-				/*
-				 * I don't escape () or _ in DescriptionNodeVisitor, so I'm not
-				 * going to treat these characters as escapable.
-				 */
-				return "`*[]".indexOf(c) >= 0;
 			}
 		}
 	},

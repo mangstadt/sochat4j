@@ -37,6 +37,15 @@ public record ChatMessage(LocalDateTime timestamp, long id, int userId, String u
 	}
 
 	/**
+	 * Determines if the message author is a system bot (e.g. Feeds).
+	 * @return true if the author is a system bot, false if the
+	 * author is a normal user account
+	 */
+	public boolean isUserSystemBot() {
+		return userId < 0;
+	}
+
+	/**
 	 * Determines if the given user is mentioned in the message.
 	 * @param userId the user ID
 	 * @param username the username

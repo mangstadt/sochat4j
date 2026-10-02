@@ -245,6 +245,15 @@ public class Http implements Closeable {
 		}
 
 		/**
+		 * Gets the response body.
+		 * @return the response body or null if there is no body (e.g. HEAD
+		 * requests)
+		 */
+		public byte[] getBodyAsBytes() {
+			return body;
+		}
+
+		/**
 		 * Parses the response body as JSON.
 		 * @return the parsed JSON or null if there is no response body (e.g.
 		 * HEAD requests)
